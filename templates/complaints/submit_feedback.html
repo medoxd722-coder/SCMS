@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feedback - Complaint #{{ complaint.id }}</title>
+</head>
+<body>
+    <h2>Resolution Feedback for Complaint #{{ complaint.id }}</h2>
+    <p><strong>Title:</strong> {{ complaint.title }}</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Submit Feedback</button>
+    </form>
+
+    <p>
+        {% if complaint.id %}
+            <a href="{% url 'complaint_detail' complaint.id %}">Cancel / Back to Complaint</a>
+        {% else %}
+            <a href="{% url 'profile' %}">Cancel / Back to Profile</a>
+        {% endif %}
+    </p>
+</body>
+</html>

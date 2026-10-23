@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complaint #{{ complaint.id }} - SUT SCMS</title>
+</head>
+<body>
+    <h2>Complaint #{{ complaint.id }}: {{ complaint.title }}</h2>
+
+    <div>
+        <p><strong>Submitted by:</strong> {{ complaint.student.username }} ({{ complaint.student.university_id }})</p>
+        <p><strong>Department:</strong> {{ complaint.department.name|default:"Unassigned" }}</p>
+        <p><strong>Assigned Staff:</strong> {{ complaint.assigned_staff.username|default:"Unassigned" }}</p>
+        <p><strong>Status:</strong> {{ complaint.get_status_display }}</p>
+        <p><strong>Priority:</strong> {{ complaint.get_priority_display }}</p>
+        <p><strong>Visibility:</strong> {{ complaint.get_visibility_display }}</p>
+        <p><strong>Category:</strong> {{ complaint.category|default:"General" }}</p>
+        <p><strong>Date:</strong> {{ complaint.created_at|date:"Y-m-d H:i" }}</p>
+        <p><strong>Description:</strong></p>
+        <p>{{ complaint.description }}</p>
+    </div>
+
+    {% if user.role == 'STAFF' or user.role == 'ADMIN' %}
+        <p><a href="{% url 'staff_update_complaint' complaint.id %}">Update Status / Add Staff Response</a></p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Attachments</h3>
+    {% if attachments %}
+        <ul>
+            {% for att in attachments %}
+                <li>
+                    <a href="{{ att.file.url }}" target="_blank">Download Attachment #{{ att.id }}</a>
+                    ({{ att.uploaded_at|date:"Y-m-d H:i" }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No attachments uploaded.</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Staff Responses & Discussion</h3>
+    {% if responses %}
+        <ul>
+            {% for resp in responses %}
+                <li>
+                    <strong>{{ resp.responder.username }} ({{ resp.responder.get_role_display }}):</strong>
+                    <p>{{ resp.message }}</p>
+                    <small>{{ resp.created_at|date:"Y-m-d H:i" }}</small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No responses yet.</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Student Feedback</h3>
+    {% if feedback %}
+        <p><strong>Rating:</strong> {{ feedback.rating }} / 5</p>
+        <p><strong>Comment:</strong> {{ feedback.comment|default:"No comment provided." }}</p>
+        <small>Submitted on {{ feedback.created_at|date:"Y-m-d H:i" }}</small>
+    {% else %}
+        {% if complaint.status == 'RESOLVED' and user == complaint.student %}
+            <p><a href="{% url 'submit_feedback' complaint.id %}">Leave Feedback on Resolution</a></p>
+        {% else %}
+            <p>No feedback submitted yet.</p>
+        {% endif %}
+    {% endif %}
+
+    <hr>
+    <p><a href="{% url 'profile' %}">Back to Profile</a> | <a href="{% url 'home' %}">Home</a></p>
+</body>
+</html>

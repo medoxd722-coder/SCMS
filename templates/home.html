@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - SUT Complaint Management System</title>
+</head>
+<body>
+    <h1>Smart University Complaint Management System (SCMS)</h1>
+    <p>El Sewedy University of Technology (SUT)</p>
+
+    {% if user.is_authenticated %}
+        <p>Welcome, <strong>{{ user.username }}</strong>! (University ID: {{ user.university_id }}, Role: {{ user.get_role_display }})</p>
+        
+        <nav>
+            <ul>
+                <li><a href="{% url 'profile' %}">My Profile &amp; Complaints</a></li>
+                <li><a href="{% url 'submit_complaint' %}">Submit New Complaint</a></li>
+                {% if user.role == 'STAFF' or user.role == 'ADMIN' %}
+                    <li><a href="{% url 'department_dashboard' %}">Department Staff Dashboard</a></li>
+                    <li><a href="{% url 'admin:index' %}">Admin Portal</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <form method="POST" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    {% else %}
+        <p>Please log in or register to access the portal:</p>
+        <p>
+            <a href="{% url 'login' %}">Login</a> |
+            <a href="{% url 'register' %}">Register</a>
+        </p>
+    {% endif %}
+</body>
+</html>

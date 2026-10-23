@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+ENV/
+env/
+
+# Environment variables
+.env
+
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Django media files
+media/
+
+# Database (if any sqlite during tests)
+*.sqlite3
+
+# IDE / Editor folders
+.vscode/
+.idea/
+*.swp
+*.swo

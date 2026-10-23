@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Dashboard - SUT SCMS</title>
+</head>
+<body>
+    <h2>Department Dashboard</h2>
+
+    {% if department %}
+        <p><strong>Department:</strong> {{ department.name }} ({{ department.code }})</p>
+    {% else %}
+        <p><strong>Department:</strong> All Departments (Administrator View)</p>
+    {% endif %}
+
+    <hr>
+
+    <h3>Active Complaints (Pending &amp; In Progress)</h3>
+
+    {% if complaints %}
+        <table border="1" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Student</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Submitted At</th>
+                    <th>Assigned Staff</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for complaint in complaints %}
+                    <tr>
+                        <td>#{{ complaint.id }}</td>
+                        <td>
+                            <a href="{% url 'complaint_detail' complaint.id %}">
+                                {{ complaint.title }}
+                            </a>
+                        </td>
+                        <td>{{ complaint.student.username }} ({{ complaint.student.university_id }})</td>
+                        <td>{{ complaint.get_status_display }}</td>
+                        <td>{{ complaint.get_priority_display }}</td>
+                        <td>{{ complaint.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ complaint.assigned_staff.username|default:"Unassigned" }}</td>
+                        <td>
+                            <a href="{% url 'staff_update_complaint' complaint.id %}">Update / Reply</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No active complaints for this department.</p>
+    {% endif %}
+
+    <hr>
+    <p><a href="{% url 'profile' %}">My Profile</a> | <a href="{% url 'home' %}">Home</a></p>
+</body>
+</html>

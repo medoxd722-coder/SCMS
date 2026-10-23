@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Update - Complaint #{{ complaint.id }}</title>
+</head>
+<body>
+    <h2>Staff Update: Complaint #{{ complaint.id }}</h2>
+    <p><strong>Title:</strong> {{ complaint.title }}</p>
+    <p><strong>Student:</strong> {{ complaint.student.username }} ({{ complaint.student.university_id }})</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Status & Priority</legend>
+            {{ status_form.as_p }}
+        </fieldset>
+
+        <fieldset>
+            <legend>Official Response / Reply (Optional)</legend>
+            {{ response_form.as_p }}
+        </fieldset>
+
+        <button type="submit">Save Updates & Send Response</button>
+    </form>
+
+    <p>
+        {% if complaint.id %}
+            <a href="{% url 'complaint_detail' complaint.id %}">Cancel / Back to Complaint</a>
+        {% else %}
+            <a href="{% url 'profile' %}">Cancel / Back to Profile</a>
+        {% endif %}
+    </p>
+</body>
+</html>

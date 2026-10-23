@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - SUT SCMS</title>
+</head>
+<body>
+    <h2>User Profile</h2>
+
+    <div>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>University ID:</strong> {{ user.university_id }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
+        {% if user.department %}
+            <p><strong>Department:</strong> {{ user.department.name }} ({{ user.department.code }})</p>
+        {% endif %}
+    </div>
+
+    <hr>
+
+    <h3>Recent Complaints</h3>
+    {% if recent_complaints %}
+        <ul>
+            {% for complaint in recent_complaints %}
+                <li>
+                    <a href="{% url 'complaint_detail' complaint.id %}">
+                        #{{ complaint.id }} - {{ complaint.title }}
+                    </a>
+                    [{{ complaint.get_status_display }} | {{ complaint.get_priority_display }}]
+                    - {{ complaint.created_at|date:"Y-m-d H:i" }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recent complaints found.</p>
+    {% endif %}
+
+    <p><a href="{% url 'submit_complaint' %}">Submit New Complaint</a> | <a href="{% url 'home' %}">Home</a></p>
+</body>
+</html>
