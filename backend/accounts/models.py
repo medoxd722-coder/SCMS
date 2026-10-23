@@ -38,14 +38,15 @@ class User(AbstractUser):
         return f"{self.username} ({self.university_id}) - {self.get_role_display()}"
 
     def save(self, *args, **kwargs):
-        """Automatically sync is_staff and is_superuser based on assigned role."""
+        """
+        Automatically sync is_staff and is_superuser based on assigned role.
+        Only ADMIN users get Django admin access (is_staff=True, is_superuser=True).
+        Staff and Students manage complaints via frontend dashboards and do not get admin access.
+        """
         if self.role == self.Role.ADMIN:
             self.is_staff = True
             self.is_superuser = True
-        elif self.role == self.Role.STAFF:
-            self.is_staff = True
-            self.is_superuser = False
-        elif self.role == self.Role.STUDENT:
+        else:
             self.is_staff = False
             self.is_superuser = False
 
