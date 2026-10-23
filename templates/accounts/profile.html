@@ -1,42 +1,137 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile - SUT SCMS</title>
-</head>
-<body>
-    <h2>User Profile</h2>
+{% extends 'base.html' %}
 
-    <div>
-        <p><strong>Username:</strong> {{ user.username }}</p>
-        <p><strong>University ID:</strong> {{ user.university_id }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Role:</strong> {{ user.get_role_display }}</p>
-        {% if user.department %}
-            <p><strong>Department:</strong> {{ user.department.name }} ({{ user.department.code }})</p>
-        {% endif %}
+{% block title %}My Profile - SUT Campus Voice{% endblock %}
+
+{% block content %}
+<!-- Stylized Header & Stat-Card Grid -->
+<div class="card shadow-sm border-0 mb-4 overflow-hidden">
+    <div class="card-body p-4 bg-white">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold mb-0 text-dark">{{ user.username }}</h3>
+                    <p class="text-muted mb-0 small"><i class="bi bi-envelope me-1"></i>{{ user.email|default:"No email provided" }}</p>
+                </div>
+            </div>
+            <div>
+                <a href="{% url 'submit_complaint' %}" class="btn btn-warning fw-bold px-3">
+                    <i class="bi bi-plus-circle me-1"></i> New Complaint
+                </a>
+            </div>
+        </div>
+
+        <!-- Stat Cards Grid -->
+        <div class="row g-3">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card bg-light border-0 p-3 h-100 shadow-none">
+                    <div class="d-flex align-items-center gap-2 text-primary mb-1">
+                        <i class="bi bi-card-heading fs-5"></i>
+                        <span class="small fw-bold text-muted text-uppercase">University ID</span>
+                    </div>
+                    <h5 class="fw-bold mb-0 text-dark">{{ user.university_id }}</h5>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card bg-light border-0 p-3 h-100 shadow-none">
+                    <div class="d-flex align-items-center gap-2 text-success mb-1">
+                        <i class="bi bi-shield-shaded fs-5"></i>
+                        <span class="small fw-bold text-muted text-uppercase">Role</span>
+                    </div>
+                    <h5 class="fw-bold mb-0 text-dark">{{ user.get_role_display }}</h5>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card bg-light border-0 p-3 h-100 shadow-none">
+                    <div class="d-flex align-items-center gap-2 text-info mb-1">
+                        <i class="bi bi-building fs-5"></i>
+                        <span class="small fw-bold text-muted text-uppercase">Department</span>
+                    </div>
+                    <h5 class="fw-bold mb-0 text-dark">{{ user.department.name|default:"General / All" }}</h5>
+                    {% if user.department %}
+                        <small class="text-muted">Code: {{ user.department.code }}</small>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card bg-light border-0 p-3 h-100 shadow-none">
+                    <div class="d-flex align-items-center gap-2 text-warning mb-1">
+                        <i class="bi bi-clock-history fs-5"></i>
+                        <span class="small fw-bold text-muted text-uppercase">Complaints</span>
+                    </div>
+                    <h5 class="fw-bold mb-0 text-dark">{{ recent_complaints|length }}</h5>
+                    <small class="text-muted">Recent submissions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- List Group of Recent Activity -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-activity text-primary"></i> Recent Activity &amp; Complaints
+        </h5>
+        <span class="badge bg-secondary">{{ recent_complaints|length }} Total</span>
     </div>
 
-    <hr>
-
-    <h3>Recent Complaints</h3>
     {% if recent_complaints %}
-        <ul>
+        <div class="list-group list-group-flush">
             {% for complaint in recent_complaints %}
-                <li>
-                    <a href="{% url 'complaint_detail' complaint.id %}">
-                        #{{ complaint.id }} - {{ complaint.title }}
-                    </a>
-                    [{{ complaint.get_status_display }} | {{ complaint.get_priority_display }}]
-                    - {{ complaint.created_at|date:"Y-m-d H:i" }}
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No recent complaints found.</p>
-    {% endif %}
+                <a href="{% url 'complaint_detail' complaint.id %}" class="list-group-item list-group-item-action p-3 transition">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-dark fs-6">#{{ complaint.id }} {{ complaint.title }}</span>
+                            {% if complaint.visibility == 'PUBLIC_FORUM' %}
+                                <span class="badge bg-light text-dark border"><i class="bi bi-globe me-1"></i>Public</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted border"><i class="bi bi-lock me-1"></i>Private</span>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="badge bg-secondary">{{ complaint.category|default:"General" }}</span>
+                            {% if complaint.status == 'RESOLVED' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% elif complaint.status == 'IN_PROGRESS' %}
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                            {% elif complaint.status == 'REJECTED' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% else %}
+                                <span class="badge bg-info text-dark">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
 
-    <p><a href="{% url 'submit_complaint' %}">Submit New Complaint</a> | <a href="{% url 'home' %}">Home</a></p>
-</body>
-</html>
+                    <p class="text-muted small mb-2">
+                        {{ complaint.description|truncatewords:24 }}
+                    </p>
+
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span>
+                            <i class="bi bi-building me-1"></i>{{ complaint.department.name|default:"Pending Assignment" }}
+                        </span>
+                        <span>
+                            <i class="bi bi-calendar3 me-1"></i>{{ complaint.created_at|date:"M d, Y - H:i" }}
+                        </span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card-body text-center p-5">
+            <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+            <h5 class="fw-bold text-dark">No Recent Complaints</h5>
+            <p class="text-muted small mb-3">You haven't submitted any complaints or inquiries yet.</p>
+            <a href="{% url 'submit_complaint' %}" class="btn btn-primary btn-sm px-3">
+                <i class="bi bi-plus-circle me-1"></i> Submit First Complaint
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

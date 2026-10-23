@@ -1,63 +1,100 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Department Dashboard - SUT SCMS</title>
-</head>
-<body>
-    <h2>Department Dashboard</h2>
+{% extends 'base.html' %}
 
-    {% if department %}
-        <p><strong>Department:</strong> {{ department.name }} ({{ department.code }})</p>
-    {% else %}
-        <p><strong>Department:</strong> All Departments (Administrator View)</p>
-    {% endif %}
+{% block title %}Department Dashboard - SUT Campus Voice{% endblock %}
 
-    <hr>
+{% block content %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check text-primary"></i> Department Staff Dashboard
+        </h2>
+        <p class="text-muted mb-0 small">
+            {% if department %}
+                Assigned Department: <strong class="text-dark">{{ department.name }} ({{ department.code }})</strong>
+            {% else %}
+                <span class="badge bg-danger">Administrator Overview (All Departments)</span>
+            {% endif %}
+        </p>
+    </div>
+    <span class="badge bg-primary fs-6 px-3 py-2">
+        {{ complaints|length }} Active Complaints
+    </span>
+</div>
 
-    <h3>Active Complaints (Pending &amp; In Progress)</h3>
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-dark">Active Tickets (Pending &amp; In Progress)</h5>
+    </div>
 
     {% if complaints %}
-        <table border="1" cellpadding="8" cellspacing="0">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Title</th>
-                    <th>Student</th>
-                    <th>Status</th>
-                    <th>Priority</th>
-                    <th>Submitted At</th>
-                    <th>Assigned Staff</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for complaint in complaints %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small text-uppercase">
                     <tr>
-                        <td>#{{ complaint.id }}</td>
-                        <td>
-                            <a href="{% url 'complaint_detail' complaint.id %}">
-                                {{ complaint.title }}
-                            </a>
-                        </td>
-                        <td>{{ complaint.student.username }} ({{ complaint.student.university_id }})</td>
-                        <td>{{ complaint.get_status_display }}</td>
-                        <td>{{ complaint.get_priority_display }}</td>
-                        <td>{{ complaint.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>{{ complaint.assigned_staff.username|default:"Unassigned" }}</td>
-                        <td>
-                            <a href="{% url 'staff_update_complaint' complaint.id %}">Update / Reply</a>
-                        </td>
+                        <th scope="col" class="ps-3">ID</th>
+                        <th scope="col">Title</th>
+                        <th scope="col">Student</th>
+                        <th scope="col">Priority</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Submitted</th>
+                        <th scope="col">Assigned Staff</th>
+                        <th scope="col" class="text-end pe-3">Actions</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                        <tr>
+                            <td class="ps-3 fw-bold text-muted">#{{ complaint.id }}</td>
+                            <td>
+                                <a href="{% url 'complaint_detail' complaint.id %}" class="fw-bold text-dark text-decoration-none d-block">
+                                    {{ complaint.title }}
+                                </a>
+                                <small class="text-muted">{{ complaint.category|default:"General" }}</small>
+                            </td>
+                            <td>
+                                <span class="d-block text-dark fw-semibold small">{{ complaint.student.username }}</span>
+                                <small class="text-muted">{{ complaint.student.university_id }}</small>
+                            </td>
+                            <td>
+                                {% if complaint.priority == 'URGENT' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% elif complaint.priority == 'HIGH' %}
+                                    <span class="badge bg-warning text-dark">High</span>
+                                {% elif complaint.priority == 'MEDIUM' %}
+                                    <span class="badge bg-info text-dark">Medium</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark border">Low</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if complaint.status == 'IN_PROGRESS' %}
+                                    <span class="badge bg-warning text-dark">In Progress</span>
+                                {% else %}
+                                    <span class="badge bg-info text-dark">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">
+                                {{ complaint.created_at|date:"M d, H:i" }}
+                            </td>
+                            <td class="small">
+                                {{ complaint.assigned_staff.username|default:"Unassigned" }}
+                            </td>
+                            <td class="text-end pe-3">
+                                <a href="{% url 'staff_update_complaint' complaint.id %}" class="btn btn-sm btn-outline-primary fw-semibold">
+                                    <i class="bi bi-pencil-square me-1"></i> Update
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
-        <p>No active complaints for this department.</p>
+        <div class="card-body text-center p-5">
+            <i class="bi bi-check-circle fs-1 text-success mb-2 d-block"></i>
+            <h5 class="fw-bold text-dark">All Caught Up!</h5>
+            <p class="text-muted small mb-0">There are no pending or in-progress complaints assigned to your department.</p>
+        </div>
     {% endif %}
-
-    <hr>
-    <p><a href="{% url 'profile' %}">My Profile</a> | <a href="{% url 'home' %}">Home</a></p>
-</body>
-</html>
+</div>
+{% endblock %}

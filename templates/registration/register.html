@@ -1,19 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - SUT Complaint Management System</title>
-</head>
-<body>
-    <h2>Register</h2>
+{% extends 'base.html' %}
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Register</button>
-    </form>
+{% block title %}Register - SUT Campus Voice{% endblock %}
 
-    <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
-</body>
-</html>
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-warning bg-opacity-10 text-warning mb-2">
+                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-1">Create an Account</h3>
+                    <p class="text-muted small">Register as a Student or Staff member at SUT</p>
+                </div>
+
+                <form method="POST" class="django-form">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-3">
+                        <i class="bi bi-check2-circle me-1"></i> Register Account
+                    </button>
+                </form>
+
+                <hr class="my-4">
+
+                <div class="text-center">
+                    <p class="small text-muted mb-0">
+                        Already have an account? 
+                        <a href="{% url 'login' %}" class="fw-bold text-primary text-decoration-none">Sign in here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

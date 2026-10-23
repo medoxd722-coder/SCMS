@@ -1,79 +1,178 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complaint #{{ complaint.id }} - SUT SCMS</title>
-</head>
-<body>
-    <h2>Complaint #{{ complaint.id }}: {{ complaint.title }}</h2>
+{% extends 'base.html' %}
 
-    <div>
-        <p><strong>Submitted by:</strong> {{ complaint.student.username }} ({{ complaint.student.university_id }})</p>
-        <p><strong>Department:</strong> {{ complaint.department.name|default:"Unassigned" }}</p>
-        <p><strong>Assigned Staff:</strong> {{ complaint.assigned_staff.username|default:"Unassigned" }}</p>
-        <p><strong>Status:</strong> {{ complaint.get_status_display }}</p>
-        <p><strong>Priority:</strong> {{ complaint.get_priority_display }}</p>
-        <p><strong>Visibility:</strong> {{ complaint.get_visibility_display }}</p>
-        <p><strong>Category:</strong> {{ complaint.category|default:"General" }}</p>
-        <p><strong>Date:</strong> {{ complaint.created_at|date:"Y-m-d H:i" }}</p>
-        <p><strong>Description:</strong></p>
-        <p>{{ complaint.description }}</p>
+{% block title %}Complaint #{{ complaint.id }} - SUT Campus Voice{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Main Complaint Details -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary fs-6">#{{ complaint.id }}</span>
+                    <span class="badge bg-secondary">{{ complaint.category|default:"General" }}</span>
+                    {% if complaint.visibility == 'PUBLIC_FORUM' %}
+                        <span class="badge bg-light text-dark border"><i class="bi bi-globe me-1"></i>Public Forum</span>
+                    {% else %}
+                        <span class="badge bg-light text-muted border"><i class="bi bi-lock me-1"></i>Private Ticket</span>
+                    {% endif %}
+                </div>
+                <div>
+                    {% if complaint.status == 'RESOLVED' %}
+                        <span class="badge bg-success py-2 px-3">Resolved</span>
+                    {% elif complaint.status == 'IN_PROGRESS' %}
+                        <span class="badge bg-warning text-dark py-2 px-3">In Progress</span>
+                    {% elif complaint.status == 'REJECTED' %}
+                        <span class="badge bg-danger py-2 px-3">Rejected</span>
+                    {% else %}
+                        <span class="badge bg-info text-dark py-2 px-3">Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                <h3 class="fw-bold text-dark mb-3">{{ complaint.title }}</h3>
+                <div class="p-3 bg-light rounded-3 mb-4">
+                    <p class="mb-0 text-dark" style="white-space: pre-wrap; font-size: 1rem; line-height: 1.7;">{{ complaint.description }}</p>
+                </div>
+
+                <!-- Attachments Section -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-paperclip text-secondary"></i> Attachments
+                </h5>
+                {% if attachments %}
+                    <div class="row g-2 mb-4">
+                        {% for att in attachments %}
+                            <div class="col-sm-6">
+                                <a href="{{ att.file.url }}" target="_blank" class="card card-body p-2 text-decoration-none border shadow-none d-flex flex-row align-items-center gap-2 bg-light">
+                                    <i class="bi bi-file-earmark-arrow-down fs-4 text-primary"></i>
+                                    <div class="overflow-hidden">
+                                        <span class="fw-semibold text-truncate d-block text-dark small">Attachment #{{ att.id }}</span>
+                                        <small class="text-muted">{{ att.uploaded_at|date:"M d, Y" }}</small>
+                                    </div>
+                                </a>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-4">No attachments uploaded for this ticket.</p>
+                {% endif %}
+
+                <!-- Staff Responses Section -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-chat-left-dots text-primary"></i> Official Staff Responses &amp; Updates
+                </h5>
+                {% if responses %}
+                    <div class="d-flex flex-column gap-3 mb-4">
+                        {% for resp in responses %}
+                            <div class="card border-0 bg-light p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-bold text-dark">
+                                        <i class="bi bi-shield-check text-primary me-1"></i>
+                                        {{ resp.responder.username }}
+                                        <span class="badge bg-secondary text-white small ms-1">{{ resp.responder.get_role_display }}</span>
+                                    </span>
+                                    <small class="text-muted">{{ resp.created_at|date:"M d, Y - H:i" }}</small>
+                                </div>
+                                <p class="mb-0 text-dark small" style="white-space: pre-wrap;">{{ resp.message }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-4">No staff responses recorded yet.</p>
+                {% endif %}
+
+                <!-- Student Resolution Feedback Section -->
+                <h5 class="fw-bold text-dark border-bottom pb-2 mb-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-star-half text-warning"></i> Resolution Feedback
+                </h5>
+                {% if feedback %}
+                    <div class="card bg-warning bg-opacity-10 border-warning border-opacity-25 p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-dark">
+                                Student Rating:
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= feedback.rating %}
+                                        <i class="bi bi-star-fill text-warning"></i>
+                                    {% else %}
+                                        <i class="bi bi-star text-muted"></i>
+                                    {% endif %}
+                                {% endfor %}
+                                ({{ feedback.rating }}/5)
+                            </span>
+                            <small class="text-muted">{{ feedback.created_at|date:"M d, Y" }}</small>
+                        </div>
+                        {% if feedback.comment %}
+                            <p class="mb-0 text-dark small mt-2">{{ feedback.comment }}</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {% if complaint.status == 'RESOLVED' and user == complaint.student %}
+                        <div class="alert alert-success d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>This complaint has been resolved!</strong>
+                                <p class="mb-0 small">Please rate your satisfaction with the resolution.</p>
+                            </div>
+                            <a href="{% url 'submit_feedback' complaint.id %}" class="btn btn-sm btn-success fw-bold">
+                                Rate Resolution
+                            </a>
+                        </div>
+                    {% else %}
+                        <p class="text-muted small mb-0">Feedback can be submitted once this ticket is resolved.</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
     </div>
 
-    {% if user.role == 'STAFF' or user.role == 'ADMIN' %}
-        <p><a href="{% url 'staff_update_complaint' complaint.id %}">Update Status / Add Staff Response</a></p>
-    {% endif %}
+    <!-- Sidebar Meta / Actions -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold mb-0 text-dark">Ticket Metadata</h6>
+            </div>
+            <div class="card-body p-3">
+                <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Submitted By:</span>
+                        <span class="fw-semibold text-dark">{{ complaint.student.username }}</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">University ID:</span>
+                        <span class="fw-semibold text-dark">{{ complaint.student.university_id }}</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Department:</span>
+                        <span class="fw-semibold text-dark">{{ complaint.department.name|default:"Unassigned" }}</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Assigned Staff:</span>
+                        <span class="fw-semibold text-dark">{{ complaint.assigned_staff.username|default:"Unassigned" }}</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Priority:</span>
+                        <span class="badge bg-light text-danger border">{{ complaint.get_priority_display }}</span>
+                    </li>
+                    <li class="d-flex justify-content-between">
+                        <span class="text-muted">Created:</span>
+                        <span class="text-dark">{{ complaint.created_at|date:"M d, Y - H:i" }}</span>
+                    </li>
+                </ul>
 
-    <hr>
+                {% if user.role == 'STAFF' or user.role == 'ADMIN' %}
+                    <hr>
+                    <a href="{% url 'staff_update_complaint' complaint.id %}" class="btn btn-primary w-100 btn-sm fw-bold">
+                        <i class="bi bi-pencil-square me-1"></i> Update Status &amp; Reply
+                    </a>
+                {% endif %}
+            </div>
+        </div>
 
-    <h3>Attachments</h3>
-    {% if attachments %}
-        <ul>
-            {% for att in attachments %}
-                <li>
-                    <a href="{{ att.file.url }}" target="_blank">Download Attachment #{{ att.id }}</a>
-                    ({{ att.uploaded_at|date:"Y-m-d H:i" }})
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No attachments uploaded.</p>
-    {% endif %}
-
-    <hr>
-
-    <h3>Staff Responses & Discussion</h3>
-    {% if responses %}
-        <ul>
-            {% for resp in responses %}
-                <li>
-                    <strong>{{ resp.responder.username }} ({{ resp.responder.get_role_display }}):</strong>
-                    <p>{{ resp.message }}</p>
-                    <small>{{ resp.created_at|date:"Y-m-d H:i" }}</small>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No responses yet.</p>
-    {% endif %}
-
-    <hr>
-
-    <h3>Student Feedback</h3>
-    {% if feedback %}
-        <p><strong>Rating:</strong> {{ feedback.rating }} / 5</p>
-        <p><strong>Comment:</strong> {{ feedback.comment|default:"No comment provided." }}</p>
-        <small>Submitted on {{ feedback.created_at|date:"Y-m-d H:i" }}</small>
-    {% else %}
-        {% if complaint.status == 'RESOLVED' and user == complaint.student %}
-            <p><a href="{% url 'submit_feedback' complaint.id %}">Leave Feedback on Resolution</a></p>
-        {% else %}
-            <p>No feedback submitted yet.</p>
-        {% endif %}
-    {% endif %}
-
-    <hr>
-    <p><a href="{% url 'profile' %}">Back to Profile</a> | <a href="{% url 'home' %}">Home</a></p>
-</body>
-</html>
+        <div class="text-center">
+            <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-sm px-3">
+                &larr; Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
