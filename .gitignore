@@ -5,6 +5,7 @@ env/
 
 # Environment variables
 .env
+backend/.env
 
 # Byte-compiled / optimized files
 __pycache__/
@@ -14,8 +15,9 @@ __pycache__/
 
 # Django media files
 media/
+backend/media/
 
-# Database (if any sqlite during tests)
+# Database files
 *.sqlite3
 
 # IDE / Editor folders
