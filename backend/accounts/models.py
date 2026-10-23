@@ -36,3 +36,17 @@ class User(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.university_id}) - {self.get_role_display()}"
+
+    def save(self, *args, **kwargs):
+        """Automatically sync is_staff and is_superuser based on assigned role."""
+        if self.role == self.Role.ADMIN:
+            self.is_staff = True
+            self.is_superuser = True
+        elif self.role == self.Role.STAFF:
+            self.is_staff = True
+            self.is_superuser = False
+        elif self.role == self.Role.STUDENT:
+            self.is_staff = False
+            self.is_superuser = False
+
+        super().save(*args, **kwargs)

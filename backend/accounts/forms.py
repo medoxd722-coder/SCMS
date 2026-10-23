@@ -7,4 +7,11 @@ User = get_user_model()
 class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'university_id', 'email', 'role', 'department')
+        fields = ('username', 'university_id', 'email', 'department')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = User.Role.STUDENT
+        if commit:
+            user.save()
+        return user
