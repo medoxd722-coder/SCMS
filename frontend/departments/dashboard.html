@@ -1,100 +1,395 @@
 {% extends 'base.html' %}
 
-{% block title %}Department Dashboard - SUT Campus Voice{% endblock %}
+{% block title %}
+  {% if user.role == 'ADMIN' %}
+    Higher Access Dashboard · SUT Campus Desk
+  {% else %}
+    {{ department.name|default:"Department" }} Complaints Inbox · SUT Campus Desk
+  {% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+<div class="wrap app">
+  <!-- Page Header -->
+  <div class="pagehead">
     <div>
-        <h2 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-shield-check text-primary"></i> Department Staff Dashboard
-        </h2>
-        <p class="text-muted mb-0 small">
-            {% if department %}
-                Assigned Department: <strong class="text-dark">{{ department.name }} ({{ department.code }})</strong>
+      <h1>
+        {% if user.role == 'ADMIN' %}
+          Higher Access Dashboard
+        {% else %}
+          {{ department.name|default:"Department" }} Complaints
+        {% endif %}
+      </h1>
+      <p>
+        {% if user.role == 'ADMIN' %}
+          University-wide performance, department reply times, and complaint resolution analytics.
+        {% else %}
+          {{ complaints|length }} complaint{{ complaints|length|pluralize }} in your department queue. First reply target: 24 hours.
+        {% endif %}
+      </p>
+    </div>
+
+    <div>
+      <span class="chip" style="font-weight: 600;">
+        {% if department %}{{ department.name }} ({{ department.code }}){% else %}University Overview{% endif %}
+      </span>
+    </div>
+  </div>
+
+  {% if user.role == 'ADMIN' %}
+    <!-- =========================================================================
+         HIGHER ACCESS ANALYTICS & KPIS
+         ========================================================================= -->
+    <div class="kpis">
+      <div class="kpi">
+        <small>Open complaints</small>
+        <b>{{ complaints|length }}</b>
+        <span>across active faculties</span>
+      </div>
+      <div class="kpi">
+        <small>Average first reply</small>
+        <b>8.4 h</b>
+        <span>Target 24 h SLA</span>
+      </div>
+      <div class="kpi">
+        <small>Resolved in 30 days</small>
+        <b>34</b>
+        <span>closed successfully</span>
+      </div>
+      <div class="kpi">
+        <small>Fixed from archive</small>
+        <b>142</b>
+        <span>deflected inquiries</span>
+      </div>
+    </div>
+
+    <!-- Charts 2-Column Grid -->
+    <div class="grid2" style="margin-bottom: 24px;">
+      <!-- Reply Time By Department Bar Chart -->
+      <div class="panel">
+        <h2>First reply time by department</h2>
+        <div class="bars">
+          <div class="bar">
+            <span>Registrar</span>
+            <div class="tr">
+              <div class="fill" style="width: 32%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">7.5 h</span>
+          </div>
+          <div class="bar">
+            <span>IT Services</span>
+            <div class="tr">
+              <div class="fill" style="width: 25%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">6.0 h</span>
+          </div>
+          <div class="bar">
+            <span>Advising</span>
+            <div class="tr">
+              <div class="fill" style="width: 48%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">11.4 h</span>
+          </div>
+          <div class="bar">
+            <span>Finance</span>
+            <div class="tr">
+              <div class="fill late" style="width: 68%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">16.2 h</span>
+          </div>
+          <div class="bar">
+            <span>Student Affairs</span>
+            <div class="tr">
+              <div class="fill" style="width: 38%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">9.1 h</span>
+          </div>
+          <div class="bar">
+            <span>Facilities</span>
+            <div class="tr">
+              <div class="fill" style="width: 52%;"></div>
+              <div class="sla"></div>
+            </div>
+            <span class="v">12.5 h</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resolved by Department Bar Chart -->
+      <div class="panel">
+        <h2>Resolved complaints by department</h2>
+        <div class="bars">
+          <div class="bar">
+            <span>Registrar</span>
+            <div class="tr"><div class="fill" style="width: 82%;"></div></div>
+            <span class="v">41</span>
+          </div>
+          <div class="bar">
+            <span>IT Services</span>
+            <div class="tr"><div class="fill" style="width: 68%;"></div></div>
+            <span class="v">34</span>
+          </div>
+          <div class="bar">
+            <span>Advising</span>
+            <div class="tr"><div class="fill" style="width: 55%;"></div></div>
+            <span class="v">27</span>
+          </div>
+          <div class="bar">
+            <span>Finance</span>
+            <div class="tr"><div class="fill" style="width: 45%;"></div></div>
+            <span class="v">22</span>
+          </div>
+          <div class="bar">
+            <span>Student Affairs</span>
+            <div class="tr"><div class="fill" style="width: 38%;"></div></div>
+            <span class="v">19</span>
+          </div>
+          <div class="bar">
+            <span>Facilities</span>
+            <div class="tr"><div class="fill" style="width: 22%;"></div></div>
+            <span class="v">11</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Department Filter for Admin -->
+  {% if user.role == 'ADMIN' and departments %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center;">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Filter by Department:</span>
+      <a class="chip {% if not selected_dept %}active{% endif %}" href="{% url 'department_dashboard' %}" style="text-decoration: none;">All Departments</a>
+      {% for d in departments %}
+        <a class="chip {% if selected_dept == d.code %}active{% endif %}" href="{% url 'department_dashboard' %}?dept={{ d.code }}" style="text-decoration: none;">
+          {{ d.name }} ({{ d.code }})
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- =========================================================================
+       COMPLAINTS QUEUE & WORKFLOW MASTER-DETAIL VIEW
+       ========================================================================= -->
+  <div class="toolbar">
+    <div class="pills" role="tablist">
+      <button class="active" onclick="filterDashboard('all', this)">All ({{ complaints|length }})</button>
+      <button onclick="filterDashboard('pending', this)">Needs reply</button>
+      <button onclick="filterDashboard('in_progress', this)">In progress</button>
+      <button onclick="filterDashboard('urgent', this)">Urgent only</button>
+    </div>
+  </div>
+
+  {% if complaints %}
+    <div class="cols rev">
+      <!-- Left List Column -->
+      <div class="tlist" id="queueList">
+        {% for complaint in complaints %}
+          <div class="titem {% if forloop.first %}active{% endif %} queue-card"
+               data-id="{{ complaint.id }}"
+               data-status="{{ complaint.status|lower }}"
+               data-priority="{{ complaint.priority|lower }}"
+               onclick="selectComplaintCard('{{ complaint.id }}')">
+            <div class="row">
+              <span class="mono muted">#CD-{{ complaint.id }}</span>
+              {% if complaint.priority == 'URGENT' %}
+                <span class="badge b-late">Urgent</span>
+              {% elif complaint.status == 'IN_PROGRESS' %}
+                <span class="badge b-inprogress">In progress</span>
+              {% elif complaint.status == 'RESOLVED' %}
+                <span class="badge b-solved">Resolved</span>
+              {% else %}
+                <span class="badge b-submitted">Submitted</span>
+              {% endif %}
+            </div>
+            <strong>{{ complaint.title }}</strong>
+            <span class="muted" style="font-size: 13px;">
+              {{ complaint.student.username }} · {{ complaint.department.code|default:"General" }} · {{ complaint.created_at|date:"M d, H:i" }}
+              {% if complaint.responses.count > 0 %}
+                · <span style="color: var(--ok); font-weight: 600;">{{ complaint.responses.count }} repl{{ complaint.responses.count|pluralize:"y,ies" }}</span>
+              {% endif %}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Right Selected Complaint Workflow Panel -->
+      <div class="panel stack" id="detailPanel">
+        {% with first=complaints|first %}
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span class="mono muted" id="detId">#CD-{{ first.id }} · {{ first.category|default:"General" }}</span>
+            <span id="detStatusBadge" class="badge {% if first.status == 'IN_PROGRESS' %}b-inprogress{% elif first.status == 'RESOLVED' %}b-solved{% else %}b-submitted{% endif %}">
+              {{ first.get_status_display }}
+            </span>
+          </div>
+
+          <h2 style="font-size: 22px; margin: 4px 0;" id="detTitle">{{ first.title }}</h2>
+          <p class="muted" id="detStudent">
+            From {% if first.student %}{{ first.student.username }} (ID {{ first.student.university_id|default:"Student" }}){% else %}Student{% endif %}, submitted {{ first.created_at|date:"M d, Y - H:i" }}
+          </p>
+
+          <div class="ctx" id="detChips">
+            <span class="chip" id="detDept">Dept: {{ first.department.name|default:"General" }}</span>
+            <span class="chip" id="detPriority">Priority: {{ first.get_priority_display }}</span>
+          </div>
+
+          <!-- Stepper Tracker -->
+          <div class="tracker">
+            <div class="done">Submitted</div>
+            <div class="{% if first.status != 'PENDING' %}done{% endif %}">Under review</div>
+            <div class="{% if first.assigned_staff %}done{% endif %}">Assigned</div>
+            <div class="{% if first.status == 'IN_PROGRESS' or first.status == 'RESOLVED' %}done{% endif %}">In progress</div>
+            <div class="{% if first.status == 'RESOLVED' %}done{% endif %}">Resolved</div>
+            <div class="{% if first.status == 'RESOLVED' %}done{% endif %}">Closed</div>
+          </div>
+
+          <!-- Description Bubble -->
+          <div class="bubble" style="margin-top: 10px;">
+            <small>{{ first.student.username }} (Student):</small>
+            <p id="detDesc" style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">{{ first.description }}</p>
+          </div>
+
+          <!-- Responses Thread for Selected Complaint -->
+          <div id="detResponses" class="stack" style="margin-top: 8px;">
+            {% if first.responses.all %}
+              {% for r in first.responses.all %}
+                <div class="bubble {% if r.responder and r.responder.role != 'STUDENT' %}staff{% endif %}">
+                  <small>{{ r.responder.get_full_name|default:r.responder.username }}{% if r.responder.role != 'STUDENT' %} · Staff Advisor{% endif %} · {{ r.created_at|date:"M d, H:i" }}</small>
+                  <div style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">{{ r.message }}</div>
+                </div>
+              {% endfor %}
             {% else %}
-                <span class="badge bg-danger">Administrator Overview (All Departments)</span>
+              <div style="font-size: 13px; color: var(--muted); padding: 6px 0; font-style: italic;">
+                No responses recorded yet for this complaint.
+              </div>
             {% endif %}
-        </p>
+          </div>
+
+          <!-- Quick Action Workflow -->
+          <div class="panel stack" style="background: var(--surface-2); margin-top: 14px;">
+            <h3 style="font-size: 16px;">Advisor Workflow Actions</h3>
+            <p class="muted" style="font-size: 13px;">Manage status, assign staff, and respond directly to the student.</p>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <a id="detUpdateLink" class="btn primary sm" href="{% url 'staff_update_complaint' first.id %}">
+                Update Status &amp; Reply &rarr;
+              </a>
+              <a id="detViewLink" class="btn sm" href="{% url 'complaint_detail' first.id %}">
+                Full Conversation Thread
+              </a>
+            </div>
+          </div>
+        {% endwith %}
+      </div>
     </div>
-    <span class="badge bg-primary fs-6 px-3 py-2">
-        {{ complaints|length }} Active Complaints
-    </span>
+  {% else %}
+    <div class="empty">
+      <b>All caught up!</b>
+      There are currently no active complaints pending in your department inbox.
+    </div>
+  {% endif %}
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0 text-dark">Active Tickets (Pending &amp; In Progress)</h5>
-    </div>
+<!-- Raw Complaints Data for Interactive Filtering -->
+<script>
+  var COMPLAINTS_DATA = {
+    {% for c in complaints %}
+      "{{ c.id }}": {
+        id: "{{ c.id }}",
+        title: "{{ c.title|escapejs }}",
+        desc: "{{ c.description|escapejs }}",
+        category: "{{ c.category|default:'General'|escapejs }}",
+        student: "{% if c.student %}{{ c.student.username|escapejs }}{% else %}Student{% endif %}",
+        studentId: "{% if c.student %}{{ c.student.university_id|escapejs }}{% else %}Student{% endif %}",
+        dept: "{{ c.department.name|default:'General'|escapejs }}",
+        priority: "{{ c.get_priority_display|escapejs }}",
+        status: "{{ c.get_status_display|escapejs }}",
+        statusCode: "{{ c.status|lower }}",
+        date: "{{ c.created_at|date:'M d, Y - H:i'|escapejs }}",
+        updateUrl: "{% url 'staff_update_complaint' c.id %}",
+        detailUrl: "{% url 'complaint_detail' c.id %}",
+        responses: [
+          {% for r in c.responses.all %}
+            {
+              responder: "{% if r.responder %}{{ r.responder.get_full_name|default:r.responder.username|escapejs }}{% else %}Advisor{% endif %}",
+              isStaff: {% if r.responder and r.responder.role != 'STUDENT' %}true{% else %}false{% endif %},
+              date: "{{ r.created_at|date:'M d, H:i'|escapejs }}",
+              message: "{{ r.message|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
 
-    {% if complaints %}
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light text-muted small text-uppercase">
-                    <tr>
-                        <th scope="col" class="ps-3">ID</th>
-                        <th scope="col">Title</th>
-                        <th scope="col">Student</th>
-                        <th scope="col">Priority</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Submitted</th>
-                        <th scope="col">Assigned Staff</th>
-                        <th scope="col" class="text-end pe-3">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for complaint in complaints %}
-                        <tr>
-                            <td class="ps-3 fw-bold text-muted">#{{ complaint.id }}</td>
-                            <td>
-                                <a href="{% url 'complaint_detail' complaint.id %}" class="fw-bold text-dark text-decoration-none d-block">
-                                    {{ complaint.title }}
-                                </a>
-                                <small class="text-muted">{{ complaint.category|default:"General" }}</small>
-                            </td>
-                            <td>
-                                <span class="d-block text-dark fw-semibold small">{{ complaint.student.username }}</span>
-                                <small class="text-muted">{{ complaint.student.university_id }}</small>
-                            </td>
-                            <td>
-                                {% if complaint.priority == 'URGENT' %}
-                                    <span class="badge bg-danger">Urgent</span>
-                                {% elif complaint.priority == 'HIGH' %}
-                                    <span class="badge bg-warning text-dark">High</span>
-                                {% elif complaint.priority == 'MEDIUM' %}
-                                    <span class="badge bg-info text-dark">Medium</span>
-                                {% else %}
-                                    <span class="badge bg-light text-dark border">Low</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if complaint.status == 'IN_PROGRESS' %}
-                                    <span class="badge bg-warning text-dark">In Progress</span>
-                                {% else %}
-                                    <span class="badge bg-info text-dark">Pending</span>
-                                {% endif %}
-                            </td>
-                            <td class="small text-muted">
-                                {{ complaint.created_at|date:"M d, H:i" }}
-                            </td>
-                            <td class="small">
-                                {{ complaint.assigned_staff.username|default:"Unassigned" }}
-                            </td>
-                            <td class="text-end pe-3">
-                                <a href="{% url 'staff_update_complaint' complaint.id %}" class="btn btn-sm btn-outline-primary fw-semibold">
-                                    <i class="bi bi-pencil-square me-1"></i> Update
-                                </a>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="card-body text-center p-5">
-            <i class="bi bi-check-circle fs-1 text-success mb-2 d-block"></i>
-            <h5 class="fw-bold text-dark">All Caught Up!</h5>
-            <p class="text-muted small mb-0">There are no pending or in-progress complaints assigned to your department.</p>
-        </div>
-    {% endif %}
-</div>
+  function selectComplaintCard(id) {
+    var cards = document.querySelectorAll('.queue-card');
+    cards.forEach(function(el) { el.classList.remove('active'); });
+    var clicked = document.querySelector('.queue-card[data-id="' + id + '"]');
+    if (clicked) clicked.classList.add('active');
+
+    var c = COMPLAINTS_DATA[id];
+    if (!c) return;
+
+    document.getElementById('detId').textContent = '#CD-' + c.id + ' · ' + c.category;
+    document.getElementById('detTitle').textContent = c.title;
+    document.getElementById('detStudent').textContent = 'From ' + c.student + ' (ID ' + c.studentId + '), submitted ' + c.date;
+    document.getElementById('detDept').textContent = 'Dept: ' + c.dept;
+    document.getElementById('detPriority').textContent = 'Priority: ' + c.priority;
+    document.getElementById('detDesc').textContent = c.desc;
+    document.getElementById('detUpdateLink').href = c.updateUrl;
+    document.getElementById('detViewLink').href = c.detailUrl;
+
+    var badge = document.getElementById('detStatusBadge');
+    badge.textContent = c.status;
+    badge.className = 'badge ' + (c.statusCode === 'resolved' ? 'b-solved' : (c.statusCode === 'in_progress' ? 'b-inprogress' : 'b-submitted'));
+
+    // Update responses for this complaint
+    var respContainer = document.getElementById('detResponses');
+    if (respContainer) {
+      respContainer.innerHTML = '';
+      if (c.responses && c.responses.length > 0) {
+        c.responses.forEach(function(r) {
+          var bubble = document.createElement('div');
+          bubble.className = 'bubble ' + (r.isStaff ? 'staff' : '');
+          bubble.innerHTML = '<small>' + r.responder + (r.isStaff ? ' · Staff Advisor' : '') + ' · ' + r.date + '</small>' +
+                             '<div style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">' + r.message + '</div>';
+          respContainer.appendChild(bubble);
+        });
+      } else {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'font-size: 13px; color: var(--muted); padding: 6px 0; font-style: italic;';
+        empty.textContent = 'No responses recorded yet for this complaint.';
+        respContainer.appendChild(empty);
+      }
+    }
+  }
+
+  function filterDashboard(type, btn) {
+    var buttons = btn.parentElement.querySelectorAll('button');
+    buttons.forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    var cards = document.querySelectorAll('.queue-card');
+    cards.forEach(function(card) {
+      var st = card.getAttribute('data-status');
+      var pr = card.getAttribute('data-priority');
+
+      if (type === 'all') {
+        card.style.display = 'grid';
+      } else if (type === 'pending' && st === 'pending') {
+        card.style.display = 'grid';
+      } else if (type === 'in_progress' && st === 'in_progress') {
+        card.style.display = 'grid';
+      } else if (type === 'urgent' && pr === 'urgent') {
+        card.style.display = 'grid';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+  }
+</script>
 {% endblock %}

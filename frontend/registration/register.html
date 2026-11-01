@@ -1,38 +1,52 @@
 {% extends 'base.html' %}
 
-{% block title %}Register - SUT Campus Voice{% endblock %}
+{% block title %}Register · SUT Campus Desk{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-7 col-lg-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4 p-md-5">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-warning bg-opacity-10 text-warning mb-2">
-                        <i class="bi bi-person-plus-fill fs-1 text-primary"></i>
-                    </div>
-                    <h3 class="fw-bold text-dark mb-1">Create an Account</h3>
-                    <p class="text-muted small">Register as a Student or Staff member at SUT</p>
-                </div>
+<section class="login">
+  <div class="wrap">
+    <!-- Left Dark Branded Aside -->
+    <aside>
+      <svg class="crest" width="44" height="50" viewBox="0 0 40 46" aria-hidden="true">
+        <path d="M20 2 4 8v14c0 11 7 19 16 22 9-3 16-11 16-22V8z" fill="#14264A" stroke="#FFC933" stroke-width="2"/>
+        <path d="M12 23.5c3-1.6 5.5-1.4 8 .5 2.5-1.9 5-2.1 8-.5V32c-3-1.6-5.5-1.4-8 .5-2.5-1.9-5-2.1-8-.5z" fill="none" stroke="#FFC933" stroke-width="1.6"/>
+        <path d="M20 24v8.5" stroke="#FFC933" stroke-width="1.6"/>
+        <path d="M20 10l2 4.2 4.6.6-3.3 3.2.8 4.5-4.1-2.2-4.1 2.2.8-4.5-3.3-3.2 4.6-.6z" fill="#FFC933"/>
+      </svg>
+      <h2>Join Campus Desk</h2>
+      <p>Register your student or staff account on the official SUT Complaint Management portal.</p>
+      <ul>
+        <li>Connect your official university credentials</li>
+        <li>Submit confidential tickets routed to the right faculty</li>
+        <li>Participate in campus-wide public issues &amp; upvoting</li>
+        <li>Track the exact 6-stage resolution status in real-time</li>
+      </ul>
+      <p style="font-size: 13px; opacity: 0.75;">
+        Registered accounts are verified against university records.
+      </p>
+    </aside>
 
-                <form method="POST" class="django-form">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-3">
-                        <i class="bi bi-check2-circle me-1"></i> Register Account
-                    </button>
-                </form>
+    <!-- Right Registration Form -->
+    <form method="POST" novalidate class="django-form">
+      {% csrf_token %}
+      <div>
+        <b style="font-size: 18px; font-family: var(--f-display);">Create your account</b>
+        <p class="muted" style="font-size: 13px; margin-top: 4px;">Enter your student or staff university details below.</p>
+      </div>
 
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <p class="small text-muted mb-0">
-                        Already have an account? 
-                        <a href="{% url 'login' %}" class="fw-bold text-primary text-decoration-none">Sign in here</a>
-                    </p>
-                </div>
-            </div>
+      {% if form.errors %}
+        <div class="field-err" role="alert" style="color: var(--bad); font-weight: 500;">
+          Please correct the errors indicated below.
         </div>
-    </div>
-</div>
+      {% endif %}
+
+      {{ form.as_p }}
+
+      <button class="btn primary" type="submit" style="margin-top: 8px;">Create account</button>
+      <div style="text-align: center; margin-top: 6px;">
+        <span class="muted" style="font-size: 13px;">Already have an account? <a href="{% url 'login' %}">Sign in here</a></span>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

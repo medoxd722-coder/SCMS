@@ -1,137 +1,150 @@
 {% extends 'base.html' %}
 
-{% block title %}My Profile - SUT Campus Voice{% endblock %}
+{% block title %}My Profile · SUT Campus Desk{% endblock %}
 
 {% block content %}
-<!-- Stylized Header & Stat-Card Grid -->
-<div class="card shadow-sm border-0 mb-4 overflow-hidden">
-    <div class="card-body p-4 bg-white">
-        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 64px; height: 64px; font-size: 1.75rem;">
-                    <i class="bi bi-person-fill"></i>
-                </div>
-                <div>
-                    <h3 class="fw-bold mb-0 text-dark">{{ user.username }}</h3>
-                    <p class="text-muted mb-0 small"><i class="bi bi-envelope me-1"></i>{{ user.email|default:"No email provided" }}</p>
-                </div>
-            </div>
-            <div>
-                <a href="{% url 'submit_complaint' %}" class="btn btn-warning fw-bold px-3">
-                    <i class="bi bi-plus-circle me-1"></i> New Complaint
-                </a>
-            </div>
-        </div>
-
-        <!-- Stat Cards Grid -->
-        <div class="row g-3">
-            <div class="col-sm-6 col-lg-3">
-                <div class="card bg-light border-0 p-3 h-100 shadow-none">
-                    <div class="d-flex align-items-center gap-2 text-primary mb-1">
-                        <i class="bi bi-card-heading fs-5"></i>
-                        <span class="small fw-bold text-muted text-uppercase">University ID</span>
-                    </div>
-                    <h5 class="fw-bold mb-0 text-dark">{{ user.university_id }}</h5>
-                </div>
-            </div>
-
-            <div class="col-sm-6 col-lg-3">
-                <div class="card bg-light border-0 p-3 h-100 shadow-none">
-                    <div class="d-flex align-items-center gap-2 text-success mb-1">
-                        <i class="bi bi-shield-shaded fs-5"></i>
-                        <span class="small fw-bold text-muted text-uppercase">Role</span>
-                    </div>
-                    <h5 class="fw-bold mb-0 text-dark">{{ user.get_role_display }}</h5>
-                </div>
-            </div>
-
-            <div class="col-sm-6 col-lg-3">
-                <div class="card bg-light border-0 p-3 h-100 shadow-none">
-                    <div class="d-flex align-items-center gap-2 text-info mb-1">
-                        <i class="bi bi-building fs-5"></i>
-                        <span class="small fw-bold text-muted text-uppercase">Department</span>
-                    </div>
-                    <h5 class="fw-bold mb-0 text-dark">{{ user.department.name|default:"General / All" }}</h5>
-                    {% if user.department %}
-                        <small class="text-muted">Code: {{ user.department.code }}</small>
-                    {% endif %}
-                </div>
-            </div>
-
-            <div class="col-sm-6 col-lg-3">
-                <div class="card bg-light border-0 p-3 h-100 shadow-none">
-                    <div class="d-flex align-items-center gap-2 text-warning mb-1">
-                        <i class="bi bi-clock-history fs-5"></i>
-                        <span class="small fw-bold text-muted text-uppercase">Complaints</span>
-                    </div>
-                    <h5 class="fw-bold mb-0 text-dark">{{ recent_complaints|length }}</h5>
-                    <small class="text-muted">Recent submissions</small>
-                </div>
-            </div>
-        </div>
+<div class="wrap app">
+  <!-- Page Header -->
+  <div class="pagehead">
+    <div>
+      <h1>My Profile</h1>
+      <p>University identity, assigned department, and complaint history.</p>
     </div>
-</div>
+    {% if user.role == 'STUDENT' %}
+      <a class="btn primary" href="{% url 'submit_complaint' %}">New Complaint</a>
+    {% endif %}
+  </div>
 
-<!-- List Group of Recent Activity -->
-<div class="card shadow-sm border-0">
-    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
-        <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-            <i class="bi bi-activity text-primary"></i> Recent Activity &amp; Complaints
-        </h5>
-        <span class="badge bg-secondary">{{ recent_complaints|length }} Total</span>
+  <!-- Profile Welcome & Identity Card Panel -->
+  <section class="panel welcome" style="margin-bottom: 24px;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 12px;">
+        <div class="avatar" style="width: 54px; height: 54px; font-size: 20px;">
+          {{ user.username|slice:":2"|upper }}
+        </div>
+        <div>
+          <h2 style="font-size: 24px; margin: 0;">{{ user.get_full_name|default:user.username }}</h2>
+          <p class="muted">{{ user.email|default:"No email registered" }}</p>
+        </div>
+      </div>
+
+      <div class="ctx">
+        <span class="chip">University ID: {{ user.university_id }}</span>
+        <span class="chip">Role: {{ user.get_role_display }}</span>
+        {% if user.department %}
+          <span class="chip">Department: {{ user.department.name }} ({{ user.department.code }})</span>
+        {% endif %}
+      </div>
+
+      <div class="cta-row">
+        {% if user.role == 'STUDENT' %}
+          <a class="btn primary" href="{% url 'submit_complaint' %}">Make a complaint</a>
+          <a class="btn" href="{% url 'my_complaints' %}">View my complaints</a>
+        {% elif user.role == 'STAFF' %}
+          <a class="btn primary" href="{% url 'department_dashboard' %}">Open department inbox</a>
+        {% else %}
+          <a class="btn primary" href="{% url 'department_dashboard' %}">Management dashboard</a>
+        {% endif %}
+        <a class="btn" href="{% url 'forum' %}">Public forum</a>
+      </div>
+    </div>
+
+    <!-- Official Student / Staff ID Card Badge -->
+    <div class="idcard">
+      <div class="band">
+        <svg class="crest" width="18" height="21" viewBox="0 0 40 46" aria-hidden="true">
+          <path d="M20 2 4 8v14c0 11 7 19 16 22 9-3 16-11 16-22V8z" fill="#14264A" stroke="#FFC933" stroke-width="2"/>
+          <path d="M12 23.5c3-1.6 5.5-1.4 8 .5 2.5-1.9 5-2.1 8-.5V32c-3-1.6-5.5-1.4-8 .5-2.5-1.9-5-2.1-8-.5z" fill="none" stroke="#FFC933" stroke-width="1.6"/>
+          <path d="M20 24v8.5" stroke="#FFC933" stroke-width="1.6"/>
+          <path d="M20 10l2 4.2 4.6.6-3.3 3.2.8 4.5-4.1-2.2-4.1 2.2.8-4.5-3.3-3.2 4.6-.6z" fill="#FFC933"/>
+        </svg>
+        SUT Campus Desk Identity
+      </div>
+      <div class="gold"></div>
+      <div class="bd">
+        <div class="photo" aria-hidden="true">
+          {{ user.username|slice:":2"|upper }}
+        </div>
+        <div>
+          <b>{{ user.username }}</b>
+          <small>
+            ID {{ user.university_id }}<br>
+            {{ user.department.code|default:"CAMPUS" }} · {{ user.get_role_display }}<br>
+            Valid Academic Year 2026/27
+          </small>
+        </div>
+      </div>
+      <div class="code" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- KPI Summary Cards -->
+  <div class="kpis">
+    <div class="kpi">
+      <small>University ID</small>
+      <b style="font-size: 24px;">{{ user.university_id }}</b>
+      <span>Verified campus record</span>
+    </div>
+    <div class="kpi">
+      <small>System Role</small>
+      <b style="font-size: 24px;">{{ user.get_role_display }}</b>
+      <span>{{ user.role }} access tier</span>
+    </div>
+    <div class="kpi">
+      <small>Department</small>
+      <b style="font-size: 20px;">{{ user.department.code|default:"General" }}</b>
+      <span>{{ user.department.name|default:"All University" }}</span>
+    </div>
+    <div class="kpi">
+      <small>Complaints Recorded</small>
+      <b style="font-size: 24px;">{{ recent_complaints|length }}</b>
+      <span>Active and past submissions</span>
+    </div>
+  </div>
+
+  <!-- Recent Complaints Panel -->
+  <section class="panel">
+    <div class="head">
+      <h2>Recent Complaints &amp; Inquiries</h2>
+      <span class="muted" style="font-size: 13px;">{{ recent_complaints|length }} items</span>
     </div>
 
     {% if recent_complaints %}
-        <div class="list-group list-group-flush">
-            {% for complaint in recent_complaints %}
-                <a href="{% url 'complaint_detail' complaint.id %}" class="list-group-item list-group-item-action p-3 transition">
-                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="fw-bold text-dark fs-6">#{{ complaint.id }} {{ complaint.title }}</span>
-                            {% if complaint.visibility == 'PUBLIC_FORUM' %}
-                                <span class="badge bg-light text-dark border"><i class="bi bi-globe me-1"></i>Public</span>
-                            {% else %}
-                                <span class="badge bg-light text-muted border"><i class="bi bi-lock me-1"></i>Private</span>
-                            {% endif %}
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="badge bg-secondary">{{ complaint.category|default:"General" }}</span>
-                            {% if complaint.status == 'RESOLVED' %}
-                                <span class="badge bg-success">Resolved</span>
-                            {% elif complaint.status == 'IN_PROGRESS' %}
-                                <span class="badge bg-warning text-dark">In Progress</span>
-                            {% elif complaint.status == 'REJECTED' %}
-                                <span class="badge bg-danger">Rejected</span>
-                            {% else %}
-                                <span class="badge bg-info text-dark">Pending</span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <p class="text-muted small mb-2">
-                        {{ complaint.description|truncatewords:24 }}
-                    </p>
-
-                    <div class="d-flex justify-content-between align-items-center small text-muted">
-                        <span>
-                            <i class="bi bi-building me-1"></i>{{ complaint.department.name|default:"Pending Assignment" }}
-                        </span>
-                        <span>
-                            <i class="bi bi-calendar3 me-1"></i>{{ complaint.created_at|date:"M d, Y - H:i" }}
-                        </span>
-                    </div>
-                </a>
-            {% endfor %}
-        </div>
+      <div class="tlist">
+        {% for complaint in recent_complaints %}
+          <a class="titem" href="{% url 'complaint_detail' complaint.id %}">
+            <div class="row">
+              <span class="mono muted">#CD-{{ complaint.id }}</span>
+              <div style="display: flex; gap: 6px; align-items: center;">
+                <span class="chip">{{ complaint.category|default:"General" }}</span>
+                {% if complaint.status == 'RESOLVED' %}
+                  <span class="badge b-solved">Resolved</span>
+                {% elif complaint.status == 'IN_PROGRESS' %}
+                  <span class="badge b-inprogress">In progress</span>
+                {% elif complaint.status == 'REJECTED' %}
+                  <span class="badge b-late">Rejected</span>
+                {% else %}
+                  <span class="badge b-submitted">Submitted</span>
+                {% endif %}
+              </div>
+            </div>
+            <strong>{{ complaint.title }}</strong>
+            <p class="muted" style="font-size: 13px;">
+              {{ complaint.description|truncatewords:20 }}
+            </p>
+            <div class="row" style="margin-top: 4px; font-size: 13px; color: var(--muted);">
+              <span>{{ complaint.department.name|default:"Pending Assignment" }}</span>
+              <span>{{ complaint.created_at|date:"M d, Y - H:i" }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
     {% else %}
-        <div class="card-body text-center p-5">
-            <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-            <h5 class="fw-bold text-dark">No Recent Complaints</h5>
-            <p class="text-muted small mb-3">You haven't submitted any complaints or inquiries yet.</p>
-            <a href="{% url 'submit_complaint' %}" class="btn btn-primary btn-sm px-3">
-                <i class="bi bi-plus-circle me-1"></i> Submit First Complaint
-            </a>
-        </div>
+      <div class="empty">
+        <b>No complaints filed yet</b>
+        You currently have no recorded tickets or department submissions.
+      </div>
     {% endif %}
+  </section>
 </div>
 {% endblock %}

@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+
+{% block title %}My Complaints · SUT Campus Desk{% endblock %}
+
+{% block content %}
+<div class="wrap app">
+  <!-- Pagehead Breadcrumb -->
+  <div class="pagehead">
+    <div>
+      <h1>
+        {% if user.role == 'STUDENT' %}
+          My Complaints
+        {% elif user.role == 'STAFF' %}
+          {{ user.department.name|default:"Department" }} Complaints
+        {% else %}
+          University Complaints Overview
+        {% endif %}
+      </h1>
+      <p>
+        {% if user.role == 'STUDENT' %}
+          Track resolution progress, replies from advisors, and official updates.
+        {% elif user.role == 'STAFF' %}
+          Complaints assigned to your department. Manage and respond directly.
+        {% else %}
+          Manage student complaints across all campus faculties and departments.
+        {% endif %}
+      </p>
+    </div>
+
+    <div>
+      {% if user.role == 'STUDENT' %}
+        <a class="btn primary" href="{% url 'submit_complaint' %}">+ New Complaint</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Department Filter for Admin -->
+  {% if user.role == 'ADMIN' and departments %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; align-items: center;">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Filter Department:</span>
+      <a class="chip {% if not selected_dept %}active{% endif %}" href="{% url 'my_complaints' %}" style="text-decoration: none;">All Departments</a>
+      {% for d in departments %}
+        <a class="chip {% if selected_dept == d.code %}active{% endif %}" href="{% url 'my_complaints' %}?dept={{ d.code }}" style="text-decoration: none;">
+          {{ d.name }} ({{ d.code }})
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if complaints %}
+    <div class="cols">
+      <!-- Left Complaint Master List -->
+      <div class="panel stack" style="max-height: 780px; overflow-y: auto;">
+        {% for complaint in complaints %}
+          <div class="my-complaint-item {% if forloop.first %}active{% endif %}"
+               data-id="{{ complaint.id }}"
+               onclick="selectMyComplaint('{{ complaint.id }}')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <span class="mono muted">#CD-{{ complaint.id }}</span>
+              {% if complaint.status == 'RESOLVED' %}
+                <span class="badge b-solved">Resolved</span>
+              {% elif complaint.status == 'IN_PROGRESS' %}
+                <span class="badge b-inprogress">In progress</span>
+              {% elif complaint.status == 'REJECTED' %}
+                <span class="badge b-late">Rejected</span>
+              {% else %}
+                <span class="badge b-submitted">Submitted</span>
+              {% endif %}
+            </div>
+            <b style="font-size: 15px; line-height: 1.3;">{{ complaint.title }}</b>
+            <div class="muted" style="font-size: 12px; margin-top: 4px;">
+              {{ complaint.department.code|default:"General" }} · {{ complaint.created_at|date:"M d, Y" }}
+              {% if complaint.responses.count > 0 %}
+                · <span style="color: var(--ok); font-weight: 600;">{{ complaint.responses.count }} repl{{ complaint.responses.count|pluralize:"y,ies" }}</span>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Right Detail Panel -->
+      <div class="panel stack" id="myDetailPanel">
+        {% with sel=complaints|first %}
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span class="mono muted" id="mySelId">#CD-{{ sel.id }}</span>
+            <span id="mySelBadge" class="badge {% if sel.status == 'RESOLVED' %}b-solved{% elif sel.status == 'IN_PROGRESS' %}b-inprogress{% else %}b-submitted{% endif %}">
+              {{ sel.get_status_display }}
+            </span>
+          </div>
+
+          <h2 style="font-size: 22px; margin: 4px 0;" id="mySelTitle">{{ sel.title }}</h2>
+          <p class="muted" id="mySelAdvisor">
+            Handled by {% if sel.assigned_staff %}{% if sel.assigned_staff.get_full_name %}{{ sel.assigned_staff.get_full_name }}{% else %}{{ sel.assigned_staff.username }}{% endif %}{% else %}Designated Advisor{% endif %}, {{ sel.department.name|default:"General Administration" }}
+          </p>
+
+          <div class="ctx" id="mySelChips">
+            <span class="chip" id="mySelDept">{{ sel.department.code|default:"Campus" }}</span>
+            <span class="chip" id="mySelPriority">Priority: {{ sel.get_priority_display }}</span>
+          </div>
+
+          <!-- Stepper Tracker -->
+          <div class="tracker" id="mySelTracker">
+            <div class="done">Submitted</div>
+            <div class="{% if sel.status != 'PENDING' %}done{% endif %}">Under review</div>
+            <div class="{% if sel.assigned_staff or sel.status == 'IN_PROGRESS' or sel.status == 'RESOLVED' %}done{% endif %}">Assigned</div>
+            <div class="{% if sel.status == 'IN_PROGRESS' or sel.status == 'RESOLVED' %}done{% endif %}">In progress</div>
+            <div class="{% if sel.status == 'RESOLVED' %}done{% endif %}">Resolved</div>
+            <div class="{% if sel.status == 'RESOLVED' %}done{% endif %}">Closed</div>
+          </div>
+
+          <!-- Description Bubble -->
+          <div class="stack" style="margin-top: 10px;">
+            <div class="bubble">
+              <small id="mySelSubmitter">Submitted by {% if sel.student %}{{ sel.student.get_full_name|default:sel.student.username }}{% else %}Student{% endif %} · {{ sel.created_at|date:"M d, H:i" }}</small>
+              <div id="mySelDesc" style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">{{ sel.description }}</div>
+            </div>
+
+            <!-- Dynamic Responses Container - Updated Dynamically via JS for each complaint -->
+            <div id="mySelResponses" class="stack" style="margin-top: 8px;">
+              {% if sel.responses.all %}
+                {% for r in sel.responses.all %}
+                  <div class="bubble {% if r.responder and r.responder.role != 'STUDENT' %}staff{% endif %}">
+                    <small>
+                      {% if r.responder %}{{ r.responder.get_full_name|default:r.responder.username }}{% else %}Staff{% endif %}
+                      {% if r.responder and r.responder.role != 'STUDENT' %} · Staff Advisor{% endif %} · {{ r.created_at|date:"M d, H:i" }}
+                    </small>
+                    <div style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">{{ r.message }}</div>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div style="font-size: 13px; color: var(--muted); padding: 8px 0; font-style: italic;">
+                  No advisor responses yet on this complaint.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <a id="mySelDetailLink" class="btn primary sm" href="{% url 'complaint_detail' sel.id %}">
+              Open Full Conversation &amp; Reply &rarr;
+            </a>
+
+            {% if sel.status == 'RESOLVED' %}
+              <a class="btn sm" href="{% url 'submit_feedback' sel.id %}">Rate Resolution</a>
+            {% endif %}
+          </div>
+        {% endwith %}
+      </div>
+    </div>
+  {% else %}
+    <div class="empty">
+      <b>No complaints found</b>
+      {% if user.role == 'STUDENT' %}
+        Personal issue with grades, fees, or registration? Make a complaint and it goes straight to the right advisor.
+        <div style="margin-top: 14px;">
+          <a class="btn primary" href="{% url 'submit_complaint' %}">Make a complaint</a>
+        </div>
+      {% else %}
+        No active complaints in this queue.
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Raw Data for Instant Client Switching with Individual Responses -->
+<script>
+  var MY_COMPLAINTS = {
+    {% for c in complaints %}
+      "{{ c.id }}": {
+        id: "{{ c.id }}",
+        title: "{{ c.title|escapejs }}",
+        desc: "{{ c.description|escapejs }}",
+        submitter: "{% if c.student %}{{ c.student.get_full_name|default:c.student.username|escapejs }}{% else %}Student{% endif %}",
+        dept: "{{ c.department.name|default:'General Administration'|escapejs }}",
+        deptCode: "{{ c.department.code|default:'Campus'|escapejs }}",
+        staff: "{% if c.assigned_staff %}{% if c.assigned_staff.get_full_name %}{{ c.assigned_staff.get_full_name|escapejs }}{% else %}{{ c.assigned_staff.username|escapejs }}{% endif %}{% else %}Designated Advisor{% endif %}",
+        priority: "{{ c.get_priority_display|escapejs }}",
+        status: "{{ c.get_status_display|escapejs }}",
+        statusCode: "{{ c.status|lower }}",
+        date: "{{ c.created_at|date:'M d, H:i'|escapejs }}",
+        detailUrl: "{% url 'complaint_detail' c.id %}",
+        responses: [
+          {% for r in c.responses.all %}
+            {
+              responder: "{% if r.responder %}{{ r.responder.get_full_name|default:r.responder.username|escapejs }}{% else %}Advisor{% endif %}",
+              isStaff: {% if r.responder and r.responder.role != 'STUDENT' %}true{% else %}false{% endif %},
+              date: "{{ r.created_at|date:'M d, H:i'|escapejs }}",
+              message: "{{ r.message|escapejs }}"
+            }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+      }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  };
+
+  function selectMyComplaint(id) {
+    var items = document.querySelectorAll('.my-complaint-item');
+    items.forEach(function(el) { el.classList.remove('active'); });
+    var clicked = document.querySelector('.my-complaint-item[data-id="' + id + '"]');
+    if (clicked) clicked.classList.add('active');
+
+    var c = MY_COMPLAINTS[id];
+    if (!c) return;
+
+    document.getElementById('mySelId').textContent = '#CD-' + c.id;
+    document.getElementById('mySelTitle').textContent = c.title;
+    document.getElementById('mySelAdvisor').textContent = 'Handled by ' + c.staff + ', ' + c.dept;
+    document.getElementById('mySelDept').textContent = c.deptCode;
+    document.getElementById('mySelPriority').textContent = 'Priority: ' + c.priority;
+    document.getElementById('mySelDesc').textContent = c.desc;
+    document.getElementById('mySelSubmitter').textContent = 'Submitted by ' + c.submitter + ' · ' + c.date;
+    document.getElementById('mySelDetailLink').href = c.detailUrl;
+
+    var badge = document.getElementById('mySelBadge');
+    badge.textContent = c.status;
+    badge.className = 'badge ' + (c.statusCode === 'resolved' ? 'b-solved' : (c.statusCode === 'in_progress' ? 'b-inprogress' : (c.statusCode === 'rejected' ? 'b-late' : 'b-submitted')));
+
+    // Render this complaint's specific responses
+    var respContainer = document.getElementById('mySelResponses');
+    if (respContainer) {
+      respContainer.innerHTML = '';
+      if (c.responses && c.responses.length > 0) {
+        c.responses.forEach(function(r) {
+          var bubble = document.createElement('div');
+          bubble.className = 'bubble ' + (r.isStaff ? 'staff' : '');
+          bubble.innerHTML = '<small>' + r.responder + (r.isStaff ? ' · Staff Advisor' : '') + ' · ' + r.date + '</small>' +
+                             '<div style="white-space: pre-wrap; line-height: 1.6; margin-top: 4px;">' + r.message + '</div>';
+          respContainer.appendChild(bubble);
+        });
+      } else {
+        var empty = document.createElement('div');
+        empty.style.cssText = 'font-size: 13px; color: var(--muted); padding: 8px 0; font-style: italic;';
+        empty.textContent = 'No advisor responses yet on this complaint.';
+        respContainer.appendChild(empty);
+      }
+    }
+  }
+</script>
+{% endblock %}

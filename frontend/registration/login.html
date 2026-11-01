@@ -1,38 +1,61 @@
 {% extends 'base.html' %}
 
-{% block title %}Login - SUT Campus Voice{% endblock %}
+{% block title %}Sign in · SUT Campus Desk{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-5">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4 p-md-5">
-                <div class="text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-primary bg-opacity-10 text-primary mb-2">
-                        <i class="bi bi-box-arrow-in-right fs-1"></i>
-                    </div>
-                    <h3 class="fw-bold text-dark mb-1">Welcome Back</h3>
-                    <p class="text-muted small">Log in to SUT Campus Voice portal</p>
-                </div>
+<section class="login">
+  <div class="wrap">
+    <!-- Left Dark Branded Aside -->
+    <aside>
+      <svg class="crest" width="44" height="50" viewBox="0 0 40 46" aria-hidden="true">
+        <path d="M20 2 4 8v14c0 11 7 19 16 22 9-3 16-11 16-22V8z" fill="#14264A" stroke="#FFC933" stroke-width="2"/>
+        <path d="M12 23.5c3-1.6 5.5-1.4 8 .5 2.5-1.9 5-2.1 8-.5V32c-3-1.6-5.5-1.4-8 .5-2.5-1.9-5-2.1-8-.5z" fill="none" stroke="#FFC933" stroke-width="1.6"/>
+        <path d="M20 24v8.5" stroke="#FFC933" stroke-width="1.6"/>
+        <path d="M20 10l2 4.2 4.6.6-3.3 3.2.8 4.5-4.1-2.2-4.1 2.2.8-4.5-3.3-3.2 4.6-.6z" fill="#FFC933"/>
+      </svg>
+      <h2>SUT student portal</h2>
+      <p>Sign in to Campus Desk, the smart student complaint and resolution module of the university portal.</p>
+      <ul>
+        <li><strong>Students:</strong> File confidential complaints, upvote public forum issues, and search verified solved solutions.</li>
+        <li><strong>Advisors &amp; Staff:</strong> Department complaints queue, official responses, and resolution archive.</li>
+        <li><strong>Higher Access:</strong> Live analytics, response speed SLA reports, and university-wide management.</li>
+      </ul>
+      <p style="font-size: 13px; opacity: 0.75;">
+        Your access level is automatically detected. You do not need to select your role.
+      </p>
+    </aside>
 
-                <form method="POST" class="django-form">
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold mt-3">
-                        <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-                    </button>
-                </form>
+    <!-- Right Login Form -->
+    <form method="POST" novalidate>
+      {% csrf_token %}
+      <div>
+        <b style="font-size: 20px; font-family: var(--f-display);">Sign in to Campus Desk</b>
+        <p class="muted" style="font-size: 13px; margin-top: 4px;">Enter your university credentials to access your dashboard.</p>
+      </div>
 
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <p class="small text-muted mb-0">
-                        Don't have an account? 
-                        <a href="{% url 'register' %}" class="fw-bold text-primary text-decoration-none">Register here</a>
-                    </p>
-                </div>
-            </div>
+      {% if error %}
+        <div class="field-err" role="alert" style="color: var(--bad); font-weight: 500;">
+          {{ error }}
         </div>
-    </div>
-</div>
+      {% endif %}
+
+      <label class="f">
+        <span>University ID or Username</span>
+        <input type="text" name="username" id="usernameInput" placeholder="e.g. 210045318 or username" required autofocus autocomplete="username">
+      </label>
+
+      <label class="f">
+        <span>Password</span>
+        <input type="password" name="password" id="passwordInput" placeholder="Enter your password" required autocomplete="current-password">
+      </label>
+
+      <button class="btn primary" type="submit" style="margin-top: 8px;">Sign in</button>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 13px;">
+        <span class="muted">Need an account? <a href="{% url 'register' %}">Register</a></span>
+        <a class="linkbtn" href="{% url 'home' %}">Back to home</a>
+      </div>
+    </form>
+  </div>
+</section>
 {% endblock %}

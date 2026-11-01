@@ -1,0 +1,938 @@
+<title>Campus Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout concept: a civic service desk. Public landing page, then a role-based app
+   (student / advisor / management) built around queue-complaint stubs as the one bold motif. */
+:root{
+  --bg:#EDF0F4;          /* cool paper */
+  --surface:#FFFFFF;
+  --surface-2:#F5F7FA;
+  --ink:#0E1A2E;         /* navy ink */
+  --muted:#5A667A;
+  --line:#D9DFE8;
+  --accent:#1F4FD8;      /* cobalt */
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E3EAFB;
+  --complaint:#FFC933;      /* queue-complaint yellow, the single bold element */
+  --complaint-ink:#2A2000;
+  --ok:#157A4B; --ok-soft:#DDF3E8;
+  --warn:#9A5B00; --warn-soft:#FDEBC8;
+  --bad:#B42318; --bad-soft:#FBE1DE;
+  --info:#1F4FD8; --info-soft:#E3EAFB;
+  --shadow:0 1px 2px rgba(14,26,46,.06),0 8px 24px rgba(14,26,46,.06);
+  --f-display:'Familjen Grotesk','Segoe UI',system-ui,sans-serif;
+  --f-body:'Public Sans','Segoe UI',system-ui,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B1220;--surface:#131C2E;--surface-2:#192339;--ink:#E7ECF5;--muted:#9AA6BB;--line:#26324B;
+  --accent:#7B9BFF;--accent-ink:#0B1220;--accent-soft:#1D2A4F;
+  --ok:#5ED79B;--ok-soft:#14352A;--warn:#F2B552;--warn-soft:#3A2A0C;--bad:#FF8F85;--bad-soft:#42171A;
+  --info:#7B9BFF;--info-soft:#1D2A4F;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1220;--surface:#131C2E;--surface-2:#192339;--ink:#E7ECF5;--muted:#9AA6BB;--line:#26324B;
+  --accent:#7B9BFF;--accent-ink:#0B1220;--accent-soft:#1D2A4F;
+  --ok:#5ED79B;--ok-soft:#14352A;--warn:#F2B552;--warn-soft:#3A2A0C;--bad:#FF8F85;--bad-soft:#42171A;
+  --info:#7B9BFF;--info-soft:#1D2A4F;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--f-body);-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+h1,h2,h3,h4{font-family:var(--f-display);margin:0;line-height:1.1;text-wrap:balance;letter-spacing:-.01em}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono);font-size:.82em;letter-spacing:.02em}
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;min-height:60px;flex-wrap:wrap;padding-block:8px}
+.brand{display:flex;align-items:center;gap:10px;font:700 19px var(--f-display);color:var(--ink);text-decoration:none;background:none;border:0;padding:0}
+.mark{width:34px;height:26px;background:var(--complaint);color:var(--complaint-ink);border-radius:5px;display:grid;place-items:center;font:700 12px var(--f-mono);position:relative}
+.mark::before,.mark::after{content:"";position:absolute;top:50%;width:8px;height:8px;margin-top:-4px;background:var(--bg);border-radius:50%}
+.mark::before{left:-4px}.mark::after{right:-4px}
+.nav{display:flex;gap:4px;margin-left:8px;flex:1;min-width:0;overflow-x:auto}
+.nav button,.nav a{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);font-weight:500;white-space:nowrap;text-decoration:none}
+.nav button:hover,.nav a:hover{color:var(--ink);background:var(--surface-2)}
+.nav button[aria-current="page"]{color:var(--ink);background:var(--surface);box-shadow:inset 0 -2px 0 var(--accent)}
+.who{display:flex;align-items:center;gap:10px;margin-left:auto}
+.who small{display:block;color:var(--muted);line-height:1.2}
+.who b{display:block;line-height:1.2}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:700 13px var(--f-display)}
+
+/* buttons / fields */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:600;text-decoration:none;color:var(--ink);transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.sm{padding:6px 12px;font-size:13px}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+label.f{display:grid;gap:6px;font-weight:600;font-size:13px}
+label.f>span small{font-weight:400;color:var(--muted)}
+input[type=text],input[type=search],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink)}
+textarea{min-height:96px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+.field-err{color:var(--bad);font-size:13px;min-height:18px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--muted);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-open{background:var(--warn-soft);color:var(--warn)}
+.b-review,.b-inprogress,.b-assigned{background:var(--info-soft);color:var(--info)}
+.b-replied{background:var(--accent-soft);color:var(--accent)}
+.b-solved,.b-resolved,.b-closed{background:var(--ok-soft);color:var(--ok)}.b-submitted{background:var(--warn-soft);color:var(--warn)}.b-underreview{background:var(--info-soft);color:var(--info)}
+.b-late{background:var(--bad-soft);color:var(--bad)}
+
+/* landing */
+.hero{padding-block:56px 40px}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(38px,6vw,68px);font-weight:700;letter-spacing:-.025em}
+.hero .lead{font-size:18px;color:var(--muted);max-width:52ch;margin-top:20px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.live{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px 20px 12px;margin-top:26px;min-width:0}
+.live h2{font-size:16px;margin-bottom:6px}
+.live-row{display:grid;grid-template-columns:auto 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--line);align-items:center}
+.live-row:first-of-type{border-top:0}
+.live-row p{font-weight:500}
+.live-row small{color:var(--muted)}
+.stub{position:absolute;right:16px;top:-26px;display:flex;background:var(--complaint);color:var(--complaint-ink);border-radius:8px;transform:rotate(2.5deg);box-shadow:0 6px 14px rgba(0,0,0,.18)}
+.stub>div{padding:8px 12px}
+.stub .n{font:700 20px var(--f-mono);line-height:1.1}
+.stub small{display:block;font-size:11px;font-weight:600;opacity:.75}
+.stub .side{border-left:2px dashed rgba(42,32,0,.45);font-size:12px;font-weight:600;line-height:1.3}
+.stub::before,.stub::after{content:"";position:absolute;left:calc(var(--cut,64%) - 7px);width:14px;height:14px;border-radius:50%;background:var(--surface)}
+.stub::before{top:-7px}.stub::after{bottom:-7px}
+.sec{padding-block:64px}
+.sec.alt{background:var(--surface);border-block:1px solid var(--line)}
+.sec h2.t{font-size:clamp(28px,4vw,42px);font-weight:700;max-width:20ch}
+.sec .sub{color:var(--muted);max-width:58ch;margin-top:12px;font-size:16px}
+.split{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:48px}
+.problems{display:grid;gap:0}
+.problems>div{padding:20px 0;border-top:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:18px}
+.problems>div:first-child{border-top:0;padding-top:0}
+.problems h3{font-size:20px;margin-bottom:6px}
+.problems p{color:var(--muted)}
+.pnum{font:700 13px var(--f-mono);color:var(--bad);background:var(--bad-soft);border-radius:6px;padding:3px 8px;height:fit-content}
+.flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin-top:36px}
+.flow>div{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:22px}
+.flow h3{font-size:20px;margin:10px 0 8px}
+.flow p{color:var(--muted)}
+.flow .ico{width:40px;height:40px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.roles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:32px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.roles>div{padding:24px;border-left:1px solid var(--line)}
+.roles>div:first-child{border-left:0}
+.roles .lvl{font:700 12px var(--f-mono);color:var(--muted)}
+.roles h3{font-size:22px;margin:8px 0}
+.roles ul{margin:12px 0 0;padding-left:18px;color:var(--muted)}
+.tablebox{overflow-x:auto;margin-top:28px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px}
+th,td{text-align:left;padding:14px 16px;border-top:1px solid var(--line);vertical-align:top}
+thead th{border-top:0;font-size:12px;color:var(--muted);font-weight:600;background:var(--surface-2)}
+td.win{background:var(--accent-soft);font-weight:500}
+tbody tr:first-child td{border-top:0}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin-top:32px}
+.steps>div{border-top:3px solid var(--complaint);padding-top:14px}
+.steps h3{font-size:18px;margin:6px 0}
+.steps p{color:var(--muted);font-size:14px}
+.steps .mono{color:var(--muted)}
+.bottom{background:var(--ink);color:var(--bg);border-radius:20px;padding:40px;display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.bottom h2{font-size:clamp(24px,3.4vw,34px);max-width:22ch;color:var(--bg)}
+.bottom .btn{border-color:transparent}
+footer.ft{padding-block:32px;color:var(--muted);font-size:13px}
+footer.ft .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+
+/* login */
+.login{padding-block:48px}
+.login .wrap{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:0;border-radius:20px;overflow:hidden;max-width:1020px;padding:0;box-shadow:var(--shadow);border:1px solid var(--line);margin-inline:auto;background:var(--surface)}
+.login aside{background:var(--ink);color:var(--bg);padding:36px;display:grid;gap:18px;align-content:start}
+.login aside h2{font-size:30px;color:var(--bg)}
+.login aside p,.login aside li{opacity:.8}
+.login aside ul{padding-left:18px;margin:0;display:grid;gap:8px}
+.login form{padding:36px;display:grid;gap:16px}
+.rolepick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.rolepick label{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;display:grid;gap:2px;background:var(--surface)}
+.rolepick label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.rolepick label:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.rolepick input{position:absolute;opacity:0;pointer-events:none}
+.rolepick b{font-family:var(--f-display)}
+.rolepick small{color:var(--muted);line-height:1.3}
+
+/* app shell */
+.app{padding-block:28px 64px}
+.pagehead{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.pagehead h1{font-size:clamp(26px,3.6vw,36px)}
+.pagehead p{color:var(--muted);margin-top:6px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.cols.rev{grid-template-columns:340px minmax(0,1fr)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.panel h2{font-size:18px;margin-bottom:12px}
+.stack{display:grid;gap:12px}
+.side{position:sticky;top:84px;display:grid;gap:16px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.toolbar .grow{flex:1;min-width:180px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:8px 14px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pills button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;color:var(--muted)}
+.pills button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+
+.post{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.vote{display:grid;justify-items:center;gap:2px;min-width:54px;padding:8px 6px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);color:var(--muted);height:fit-content}
+.vote b{font:700 15px var(--f-display);color:var(--ink)}
+.vote:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.vote.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.vote.on b{color:var(--accent-ink)}
+.vote:disabled{cursor:default}
+.post h3{font-size:19px;margin:6px 0}
+.post .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+.post .body{color:var(--muted)}
+.post .foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:600}
+.official{margin-top:14px;border-left:3px solid var(--accent);background:var(--accent-soft);padding:12px 14px;border-radius:0 10px 10px 0}
+.official small{display:block;color:var(--muted);margin-bottom:2px}
+.thread{display:grid;gap:10px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cm{display:grid;gap:2px;padding:10px 12px;background:var(--surface-2);border-radius:10px}
+.cm small{color:var(--muted)}
+.cm.staff{background:var(--accent-soft)}
+.inline{display:flex;gap:8px}
+.inline input{flex:1;min-width:0}
+
+.empty{text-align:center;padding:36px 16px;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
+.empty b{display:block;color:var(--ink);font-family:var(--f-display);font-size:18px;margin-bottom:4px}
+
+/* complaints */
+.tlist{display:grid;gap:8px}
+.titem{display:grid;gap:6px;text-align:left;width:100%;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.titem[aria-current="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.titem .row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.titem strong{font-weight:600}
+.tracker{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin:16px 0}
+.tracker div{font-size:12px;color:var(--muted);display:grid;gap:6px}
+.tracker div::before{content:"";height:6px;border-radius:4px;background:var(--line)}
+.tracker div.done{color:var(--ink);font-weight:600}
+.tracker div.done::before{background:var(--accent)}
+.bubble{max-width:86%;padding:10px 14px;border-radius:14px;background:var(--surface-2);display:grid;gap:2px}
+.bubble small{color:var(--muted)}
+.bubble.staff{background:var(--accent-soft);justify-self:end}
+.route{display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:10px;background:var(--complaint);color:var(--complaint-ink);font-weight:600}
+.route small{display:block;font-weight:500;opacity:.8}
+.sugg{border:1px solid var(--ok);background:var(--ok-soft);border-radius:12px;padding:14px;display:grid;gap:10px}
+.sugg h3{font-size:15px;color:var(--ok)}
+.sugg article{background:var(--surface);border-radius:10px;padding:10px 12px;display:grid;gap:6px}
+
+/* archive */
+details.ans{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0}
+details.ans summary{list-style:none;cursor:pointer;padding:16px 18px;display:grid;gap:6px}
+details.ans summary::-webkit-details-marker{display:none}
+details.ans summary h3{font-size:18px}
+details.ans[open] summary{border-bottom:1px solid var(--line)}
+details.ans .in{padding:16px 18px;display:grid;gap:14px}
+details.ans ol{margin:0;padding-left:20px;display:grid;gap:6px}
+.ans .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:13px}
+
+/* dashboard */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.kpi small{color:var(--muted);display:block}
+.kpi b{display:block;font:700 32px var(--f-display);margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi span{font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+.bars{display:grid;gap:14px}
+.bar{display:grid;grid-template-columns:130px minmax(0,1fr) 62px;gap:12px;align-items:center;font-size:13px}
+.bar .tr{position:relative;height:14px;background:var(--surface-2);border-radius:7px}
+.bar .fill{position:absolute;inset:0 auto 0 0;border-radius:7px;background:var(--accent)}
+.bar .fill.late{background:var(--bad)}
+.bar .sla{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);left:50%}
+.bar .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.axis{display:grid;grid-template-columns:130px minmax(0,1fr) 62px;gap:12px;font-size:12px;color:var(--muted);margin-top:6px}
+.axis div{position:relative;height:16px}
+.axis span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.stack-bar{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--surface-2)}
+.stack-bar i{display:block}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.tablebox.flat{margin-top:0;border:0}
+td .sel{padding:6px 8px;font-size:13px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:80;display:grid;gap:8px;justify-items:center;pointer-events:none}
+#toast div{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:500;box-shadow:var(--shadow)}
+
+.uni{background:var(--ink);color:var(--bg);font-size:12px}
+.uni .wrap{display:flex;gap:6px 18px;justify-content:space-between;flex-wrap:wrap;padding-block:6px}
+.uni span{opacity:.85}
+.brand span.bt{display:block;text-align:left}
+.brand b{display:block;font:700 16px var(--f-display);line-height:1.1}
+.brand small{display:block;font:500 11px var(--f-body);color:var(--muted);line-height:1.2;margin-top:2px}
+.crest{display:block;flex:none}
+.bellw{position:relative}
+.bellw .dot{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;pointer-events:none}
+.notif{position:absolute;right:0;top:calc(100% + 8px);width:min(340px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:70}
+.notif .n{display:block;width:100%;text-align:left;background:none;border:0;padding:10px;border-radius:8px;line-height:1.35}
+.notif .n:hover{background:var(--surface-2)}
+.homegrid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:20px;margin-top:20px}
+.hg-8{grid-column:span 8}.hg-4{grid-column:span 4}.hg-12{grid-column:span 12}
+.welcome{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;padding:28px}
+.welcome h1{font-size:clamp(26px,3.6vw,38px)}
+.idcard{width:310px;max-width:100%;border-radius:14px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.idcard .band{background:#14264A;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;font:600 12px var(--f-display)}
+.idcard .gold{height:5px;background:var(--complaint)}
+.idcard .bd{padding:14px;display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px}
+.idcard .photo{width:64px;height:78px;border-radius:8px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font:700 22px var(--f-display)}
+.idcard .bd b{display:block;font:700 16px var(--f-display);line-height:1.15}
+.idcard .bd small{display:block;color:var(--muted);line-height:1.35;margin-top:3px}
+.idcard .code{height:26px;margin:0 14px 14px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 5px,transparent 5px 8px)}
+.date{display:grid;grid-template-columns:50px minmax(0,1fr);gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.date:first-of-type{border-top:0}
+.date .d{text-align:center;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:4px 0;line-height:1.1}
+.date .d b{display:block;font:700 18px var(--f-display)}
+.date .d small{font-size:11px;color:var(--muted)}
+.date.soon .d{background:var(--complaint);border-color:var(--complaint);color:var(--complaint-ink)}
+.date.soon .d small{color:var(--complaint-ink)}
+.ann{padding:12px 0;border-top:1px solid var(--line)}
+.ann:first-of-type{border-top:0;padding-top:0}
+.ann h3{font-size:16px;margin:4px 0}
+.ann p{color:var(--muted);font-size:14px}
+.item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);text-align:left;width:100%;background:none;border-left:0;border-right:0;border-bottom:0}
+.item:first-of-type{border-top:0}
+.item>div{min-width:0}
+.panel .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.panel .head h2{margin:0}
+.kpis.in{margin:20px 0 0}
+.fileline{font-size:13px;color:var(--muted)}
+.ctx{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.foot2{background:var(--surface);border-top:1px solid var(--line);margin-top:24px}
+.foot2 .wrap{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:28px;padding-block:32px;font-size:14px}
+.foot2 h4{font-size:14px;margin-bottom:8px}
+.foot2 p,.foot2 li{color:var(--muted)}
+.foot2 ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.foot2 .fine{grid-column:1/-1;border-top:1px solid var(--line);padding-top:16px;font-size:13px;color:var(--muted)}
+@media (max-width:960px){
+  .hg-8,.hg-4{grid-column:span 12}
+  .welcome{grid-template-columns:minmax(0,1fr)}
+  .foot2 .wrap{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:960px){
+  .hero .wrap,.split,.login .wrap,.cols,.cols.rev,.grid2{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .flow,.roles{grid-template-columns:minmax(0,1fr)}
+  .roles>div{border-left:0;border-top:1px solid var(--line)}.roles>div:first-child{border-top:0}
+  .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .who small{display:none}
+}
+@media (max-width:560px){
+  .rolepick{grid-template-columns:minmax(0,1fr)}
+  .steps{grid-template-columns:minmax(0,1fr)}
+  .post{grid-template-columns:minmax(0,1fr)}
+  .vote{grid-auto-flow:column;justify-self:start;align-items:center;gap:8px;padding:6px 12px}
+  .bar,.axis{grid-template-columns:90px minmax(0,1fr) 52px}
+  .login aside,.login form{padding:24px}
+  .bottom{padding:28px 22px}
+  .stub{right:8px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .vote,.btn{transition:background .15s,border-color .15s,color .15s}
+  .bar .fill{transition:width .5s ease}
+}
+</style>
+
+<div id="app"></div>
+<div id="toast" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+var H=3600e3;
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var $=function(s){return document.querySelector(s)};
+
+/* ---------- reference data ---------- */
+var DEPTS={
+  registrar:{n:'Registrar',staff:['Eng. Mona Fathy','Mr. Karim Saad']},
+  advising:{n:'Academic Advising',staff:['Dr. Salma Nabil','Dr. Tarek Younes']},
+  it:{n:'IT Services',staff:['Mr. Hesham Adly','Ms. Nour Gamal']},
+  finance:{n:'Finance Office',staff:['Mr. Adel Ragab','Ms. Dina Sherif']},
+  affairs:{n:'Student Affairs',staff:['Ms. Heba Lotfy','Mr. Yassin Amer']},
+  facilities:{n:'Facilities',staff:['Eng. Ashraf Wahba','Ms. Reem Salah']}
+};
+var CATS=[
+  {id:'grades',n:'Registration & grades',d:'registrar'},
+  {id:'study',n:'Study plan & courses',d:'advising'},
+  {id:'it',n:'Portal, Wi-Fi & accounts',d:'it'},
+  {id:'fees',n:'Fees & payments',d:'finance'},
+  {id:'life',n:'Transport, housing & clubs',d:'affairs'},
+  {id:'campus',n:'Labs, library & facilities',d:'facilities'}
+];
+var C={};CATS.forEach(function(c){C[c.id]=c});
+var UNI={name:'University',year:'2026/27',term:'Fall semester',week:6}; var TICKET_ST={submitted:'Submitted',underreview:'Under review',assigned:'Assigned',inprogress:'In progress',resolved:'Resolved',closed:'Closed'};var TICKET_STATES=Object.keys(TICKET_ST);function isResolved(t){return t.status==='resolved'||t.status==='closed'||t.status==='solved'}
+var FACS=[{id:'eng',n:'Engineering'},{id:'cs',n:'Computer Science'},{id:'bus',n:'Business'},{id:'pharm',n:'Pharmacy'}];
+var FC={};FACS.forEach(function(f){FC[f.id]=f});
+var STUDENT={id:'210045318',name:'Omar Hassan',fac:'eng',program:'Mechatronics Engineering',level:'Year 3',advisor:'Dr. Salma Nabil',email:'omar.hassan@student.ntu.example.edu'};
+var MGR={id:'M-0007',name:'Prof. Hatem Mansour',title:'Vice Dean for Student Affairs'};
+var SLA=24;
+
+/* ---------- seed data (demo) ---------- */
+function seed(){
+  var now=Date.now();
+  var posts=[
+    ['grades','Registrar lines start at 7 AM and the desk cannot handle grade appeals','Students queue for hours and are told grade appeals go to another office. Nobody can tell us which one.',412,[],'review',52,null],
+    ['it','Wi-Fi in Building C drops during lectures','Streaming slides and joining online quizzes fails in rooms C105 to C112. It happens most days after 11 AM.',287,[],'replied',30,{by:'Mr. Hesham Adly (IT Services)',text:'We found two overloaded access points in Building C. Replacements are scheduled for next week and we will post here when they are live.',ts:now-6*H}],
+    ['it','Registration portal crashes when the window opens at 12:00','Thousands of us log in at the same minute and the page times out. Some people lose their seats in popular sections.',256,[],'open',75,null],
+    ['campus','Not enough library seats during finals week','By 9 AM every table is taken by bags. Students without a seat study on the floor.',198,[],'open',100,null],
+    ['life','Bus schedule from Cairo does not match first lecture times','The first bus arrives after 8:30 AM but many lectures start at 8:00.',174,[],'review',120,null],
+    ['fees','Installment payment receipts take 10 days to appear','After paying at the bank the portal still shows the installment as unpaid, and we cannot register.',133,[],'replied',160,{by:'Mr. Adel Ragab (Finance Office)',text:'Bank confirmations now sync every 24 hours. If your payment is older than 3 days, open a complaint with your receipt number.',ts:now-40*H}],
+    ['study','Advisors give conflicting study plan advice','Two advisors told me different things about the same elective requirement.',96,[],'open',190,null],
+    ['life','Cafeteria prices went up without notice','Several items cost 20 to 30 percent more than last month with no announcement.',61,[],'open',220,null]
+  ].map(function(p,i){return {id:'p'+(i+1),cat:p[0],title:p[1],body:p[2],votes:p[3],voters:p[4],status:p[5],ts:now-p[6]*H,author:'Student',fac:FACS[i%4].id,comments:[],official:p[7]}});
+  posts[1].comments=[{by:'Student',role:'student',text:'Same in C108. It drops every 15 minutes or so.',ts:now-20*H}];
+  posts[0].comments=[{by:'Student',role:'student',text:'Went twice this week. The desk said to email instead.',ts:now-30*H}];
+
+  var archive=[
+    ['grades','Grade shows "I" (incomplete) after the final exam',['Check the grade sheet notes in the portal. An "I" means the instructor has not submitted a final mark.','Email your instructor and copy the course coordinator within 5 working days.','If the mark is not updated after 7 days, open a complaint under Registration & grades with the course code.'],'Eng. Mona Fathy',90,41],
+    ['study','How to drop a course after the add/drop deadline',['Late drops need advisor approval and a valid reason.','Open a complaint under Study plan & courses and attach supporting documents.','Your advisor sends the request to the Dean. You get a decision in 3 to 5 working days.'],'Dr. Salma Nabil',60,67],
+    ['it','Cannot log in to the portal after a password reset',['Wait 15 minutes after the reset. The directory needs time to sync.','Sign in with your student ID, not your email address.','Clear browser cookies and try a private window.','Still blocked? Open an IT complaint with a screenshot of the error.'],'Ms. Nour Gamal',45,122],
+    ['fees','Installment shows unpaid after a bank transfer',['Keep the bank receipt with the reference number.','Wait 24 hours for the bank sync.','If it still shows unpaid, open a Fees & payments complaint and attach the receipt.'],'Mr. Adel Ragab',30,58],
+    ['it','Wi-Fi asks for login every few minutes in the dorms',['Forget the network and reconnect once.','Turn off random MAC address for this network in your device settings.','If it continues, send your room number and device model in an IT complaint.'],'Mr. Hesham Adly',22,94],
+    ['grades','Official transcript: how long and how much',['Request it in the portal under Documents.','Pay the fee at the Finance Office or online.','Pickup takes 3 working days. Sealed copies for other universities take 5.'],'Mr. Karim Saad',75,83],
+    ['study','A prerequisite blocks me from registering for a course',['Check the study plan to confirm which prerequisite is missing.','If you passed an equivalent course, ask your advisor for a prerequisite waiver.','The waiver is applied the same day it is approved.'],'Dr. Tarek Younes',50,39],
+    ['campus','Lab access card does not open the door',['Tap the card on the reader for two seconds.','Ask the lab technician to check your name on the access list.','If you are missing from the list, open a Facilities complaint with your course code.'],'Ms. Reem Salah',15,27]
+  ].map(function(a,i){return {id:'a'+(i+1),cat:a[0],dept:C[a[0]].d,title:a[1],answer:a[2],by:a[3],ts:now-a[4]*24*H,helpful:a[5]}});
+
+  var COURSES={0:'MATH 201',3:'CS 110',5:'PHY 102',8:'ENG 301',9:'ENG 220'},URG=[6,10];
+  /* complaint: cat, title, body, studentId, studentName, staffIdx, createdHoursAgo, firstReplyAfterH, solvedAfterH, staffReply, studentFollowUp */
+  var T=[
+    ['grades','Final grade for MATH 201 is missing','My MATH 201 grade has shown "pending" for two weeks after results were announced.',STUDENT.id,STUDENT.name,0,70,5,null,'I checked with the instructor. The grade sheet was submitted yesterday and should appear in the portal within 24 hours.',null],
+    ['fees','Receipt not showing for installment 2',"I paid at the bank on Sunday and the portal still shows installment 2 as unpaid.",STUDENT.id,STUDENT.name,0,200,30,52,'Receipt matched and synced. Your balance is updated and registration is unlocked.',null],
+    ['study','Can I take two electives in the same slot?','I want to swap one elective for a different section and need to know if it counts toward the study plan.',STUDENT.id,STUDENT.name,0,3,null,null,null,null],
+    ['grades','Grade appeal for CS 110 midterm','I believe a question was marked wrongly and want a re-check.','210051207','Laila Samir',1,120,52,null,'Appeals go through the course instructor first. I forwarded your request and they will respond within 5 working days.','Thanks. Is there a form I should fill in?'],
+    ['grades','Name spelled wrong on transcript','My name is misspelled in English on the transcript draft.','210038812','Youssef Adel',0,48,40,null,'Please send a copy of your national ID so we can correct it.',null],
+    ['it','Cannot access the course shell for PHY 102','The course does not appear in my portal list although I am registered.','210049550','Mariam Tarek',0,30,2,5,'Enrollment sync was missing. Fixed. Please log out and in again.',null],
+    ['it','Email account locked','My university email says the account is locked.','210044901','Khaled Nasser',1,10,4,null,'We unlocked it. Please change the password now.',null],
+    ['it','VPN does not connect from home','The VPN client stops at "authenticating".','210052276','Rana Essam',0,6,null,null,null,null],
+    ['study','Need approval for a course overload','I want to register 21 credit hours next term.','210047713','Hana Ibrahim',0,60,14,null,'Your GPA qualifies. I sent the request to the Dean for approval.',null],
+    ['study','Change of major paperwork','What documents do I need to move from Engineering to Business?','210046620','Ziad Mahmoud',1,90,16,40,'Submit the change form and your transcript. I attached the checklist.',null],
+    ['fees','Scholarship discount not applied to fees','My merit discount is missing from the second semester invoice.','210040018','Salma Gaber',0,100,36,null,'Checking with the scholarship committee. I will update you tomorrow.','Any news? The deadline is Thursday.'],
+    ['fees','Refund for a dropped course','I dropped a course in week 1 and was told I get a refund.','210053341','Tamer Khalil',1,150,44,100,'Refund approved and sent to your bank on file.',null],
+    ['life','Dorm room request after the deadline','I could not apply on time because of a medical visit.','210048890','Nada Fouad',0,40,18,null,'Your request is with the housing committee. I will message you after Monday.',null],
+    ['life','Club room booking conflict','Two clubs booked the same room for Tuesday.','210045590','Mostafa Kamel',1,24,20,22,'Resolved. The robotics club moved to Room B12.',null],
+    ['campus','Projector broken in C204','The projector does not turn on and the lecture was cancelled.','210041115','Aya Samy',0,36,26,null,'A technician is booked for tomorrow morning.',null],
+    ['campus','Air conditioning too cold in the library','The second floor is freezing during exams.','210052900','Omar Sherif',1,18,30,null,null,null]
+  ].map(function(t,i){
+    var cat=C[t[0]],dept=cat.d,created=now-t[6]*H,assignee=DEPTS[dept].staff[t[5]];
+    var msgs=[{from:'student',name:t[4],text:t[2],ts:created}];
+    if(t[7]!=null&&t[9])msgs.push({from:'staff',name:assignee,text:t[9],ts:created+t[7]*H});
+    if(t[10])msgs.push({from:'student',name:t[4],text:t[10],ts:created+(t[7]||0)*H+3*H});
+    if(t[8]!=null)msgs.push({from:'staff',name:assignee,text:'Marked as resolved.',ts:created+t[8]*H});
+    return {id:'CD-'+(2001+i),fac:t[3]===STUDENT.id?'eng':FACS[(i+1)%4].id,course:COURSES[i]||'',priority:URG.indexOf(i)>-1?'urgent':'normal',attachment:i===1?'receipt-installment-2.pdf':'',title:t[1],cat:t[0],dept:dept,studentId:t[3],studentName:t[4],assignee:assignee,
+      status:t[8]!=null?'resolved':(t[7]!=null?'inprogress':'submitted'),created:created,
+      firstResponse:t[7]!=null?created+t[7]*H:null,solvedAt:t[8]!=null?created+t[8]*H:null,messages:msgs};
+  });
+  var ANN=[{id:'n1',tag:'Registration',title:'Add/drop period closes on Thursday',body:'Submit course changes in the portal before 3 PM. Late drops need advisor approval and a valid reason.',by:'Registrar',ts:now-5*H},{id:'n2',tag:'IT',title:'Portal maintenance on Friday, 2 to 4 AM',body:'Registration, grades and Campus Desk will be unavailable for two hours.',by:'IT Services',ts:now-30*H},{id:'n3',tag:'Exams',title:'Midterm schedule published',body:'Check your exam dates and rooms in the portal. Report any clash through a complaint.',by:'Office of the Dean',ts:now-3*24*H}];
+  return {announcements:ANN,posts:posts,archive:archive,complaints:T,nextComplaint:2001+T.length,nextPost:posts.length+1};
+}
+
+/* ---------- state ---------- */
+var KEY='campusdesk.v2';
+var S={data:null,user:null,seen:0,view:'landing',ui:{draft:{},fsort:'top',fcat:'',openPost:null,openComplaint:null,demoVotes:{},helped:{},solving:false,arcCat:''}};
+function load(){try{var r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({data:S.data,user:S.user,seen:S.seen}))}catch(e){}}
+(function init(){var l=load();S.data=(l&&l.data)||seed();S.user=(l&&l.user)||null;S.seen=(l&&l.seen)||0;if(S.user)S.view=home(S.user.role)})();
+if(S.data&&!S.data.complaints&&S.data.tickets){S.data.complaints=S.data.tickets;S.data.nextComplaint=S.data.nextTicket||2001} if(S.data&&S.data.complaints){S.data.nextComplaint=S.data.nextComplaint||2001;S.data.complaints.forEach(function(t){if(t.status==='solved')t.status='resolved';else if(t.status==='open'||t.status==='review')t.status='underreview';else if(t.status==='replied')t.status='inprogress';else if(TICKET_STATES.indexOf(t.status)<0)t.status='submitted'})} var D=function(){return S.data};
+
+/* ---------- helpers ---------- */
+function home(){return 'home'}
+function ago(ts){var m=Math.round((Date.now()-ts)/6e4);if(m<1)return 'just now';if(m<60)return m+' min ago';var h=Math.round(m/60);if(h<24)return h+' h ago';return Math.round(h/24)+' d ago'}
+function dr(k,d){var v=S.ui.draft[k];return v==null?(d==null?'':d):v}
+function tv(p){return p.votes+p.voters.length}
+function initials(n){return n.replace(/^(Dr|Eng|Mr|Ms|Prof)\.\s*/,'').split(' ').map(function(x){return x[0]}).slice(0,2).join('').toUpperCase()}
+function toast(m){var d=document.createElement('div');d.textContent=m;$('#toast').appendChild(d);setTimeout(function(){d.remove()},2600)}
+var ST={open:'Open',review:'Under review',replied:'Official reply',solved:'Solved',assigned:'Assigned',inprogress:'In progress',submitted:'Submitted',underreview:'Under review',resolved:'Resolved',closed:'Closed'};
+function badge(s){return '<span class="badge b-'+s+'">'+ST[s]+'</span>'}
+function catChip(id){return '<span class="chip">'+esc(C[id].n)+'</span>'}
+var IC={
+  up:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  forum:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  lock:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  search:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>'
+};
+
+/* ---------- navigation ---------- */
+function go(v,opts){S.view=v;if(opts)Object.keys(opts).forEach(function(k){S.ui[k]=opts[k]});render();window.scrollTo(0,0)}
+
+/* ---------- shells ---------- */
+function crest(sz){return '<svg class="crest" width="'+sz+'" height="'+Math.round(sz*1.15)+'" viewBox="0 0 40 46" aria-hidden="true"><path d="M20 2 4 8v14c0 11 7 19 16 22 9-3 16-11 16-22V8z" fill="#14264A" stroke="#FFC933" stroke-width="2"/><path d="M12 23.5c3-1.6 5.5-1.4 8 .5 2.5-1.9 5-2.1 8-.5V32c-3-1.6-5.5-1.4-8 .5-2.5-1.9-5-2.1-8-.5z" fill="none" stroke="#FFC933" stroke-width="1.6" stroke-linejoin="round"/><path d="M20 24v8.5" stroke="#FFC933" stroke-width="1.6"/><path d="M20 10l2 4.2 4.6.6-3.3 3.2.8 4.5-4.1-2.2-4.1 2.2.8-4.5-3.3-3.2 4.6-.6z" fill="#FFC933"/></svg>'}
+function uniBar(){return '<div class="uni"><div class="wrap"><span>'+UNI.name+' · Official student portal</span><span>Academic year '+UNI.year+' · '+UNI.term+' · Week '+UNI.week+'</span></div></div>'}
+function notifs(){
+  var u=S.user,out=[],T=D().complaints,P=D().posts;
+  if(u.role==='student'){
+    T.filter(function(t){return t.studentId===u.id}).forEach(function(t){var l=t.messages[t.messages.length-1];if(l.from==='staff')out.push({ts:l.ts,t:(isResolved(t)?'Solved: ':'New reply on ')+t.id+', '+t.title,go:'complaints',id:t.id})});
+    P.forEach(function(p){if(p.official&&(p.voters.indexOf(u.id)>-1||p.author==='You'))out.push({ts:p.official.ts,t:'Official reply on a post you follow: '+p.title,go:'forum',post:p.id})});
+  }else if(u.role==='advisor'){
+    T.filter(function(t){return t.dept===u.dept&&needsReply(t)}).forEach(function(t){out.push({ts:t.messages[t.messages.length-1].ts,t:(t.priority==='urgent'?'Urgent: ':'Needs reply: ')+t.id+', '+t.title,go:'inbox',id:t.id})});
+  }else{
+    P.forEach(function(p){if(tv(p)>=150&&!p.official)out.push({ts:p.ts,t:tv(p)+' votes and no official reply: '+p.title,go:'forum',post:p.id})});
+  }
+  return out.sort(function(a,b){return b.ts-a.ts});
+}
+var BELL='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>';
+function bellHTML(){
+  var n=notifs(),un=n.filter(function(x){return x.ts>S.seen}).length,open=S.ui.bell;
+  var h='<div class="bellw"><button class="btn sm" data-act="bell" aria-label="Notifications'+(un?', '+un+' new':'')+'" aria-expanded="'+!!open+'">'+BELL+'</button>'+(un?'<span class="dot">'+un+'</span>':'');
+  if(open)h+='<div class="notif" role="region" aria-label="Notifications">'+(n.length?n.slice(0,6).map(function(x){return '<button class="n" data-act="notif" data-go="'+x.go+'" data-id="'+esc(x.id||'')+'" data-post="'+esc(x.post||'')+'"><span>'+esc(x.t)+'</span><br><small class="muted">'+ago(x.ts)+(x.ts>(S.ui.prevSeen||0)?' · new':'')+'</small></button>'}).join(''):'<p class="muted" style="padding:10px">You are all caught up.</p>')+'</div>';
+  return h+'</div>';
+}
+function header(){
+  var u=S.user,nav='';
+  if(u){
+    var items=u.role==='student'?[['home','Home'],['forum','Forum'],['complaints','My complaints'],['newcomplaint','New complaint'],['archive','Solved archive']]
+      :u.role==='advisor'?[['home','Home'],['inbox','Complaint inbox'],['forum','Forum'],['archive','Solved archive']]
+      :[['home','Home'],['dash','Dashboard'],['inbox','All complaints'],['forum','Forum'],['archive','Solved archive']];
+    nav='<nav class="nav" aria-label="Main">'+items.map(function(i){return '<button data-act="nav" data-v="'+i[0]+'"'+(S.view===i[0]?' aria-current="page"':'')+'>'+i[1]+'</button>'}).join('')+'</nav>'+
+      '<div class="who">'+bellHTML()+'<div class="avatar" aria-hidden="true">'+esc(initials(u.name))+'</div><div><b>'+esc(u.name)+'</b><small>'+esc(roleLabel(u))+'</small></div><button class="btn sm" data-act="logout">Sign out</button></div>';
+  }else{
+    nav='<nav class="nav" aria-label="Main"><button data-act="scroll" data-t="problem">The problem</button><button data-act="scroll" data-t="how">How it works</button><button data-act="scroll" data-t="access">Access levels</button><button data-act="scroll" data-t="why">Why it wins</button></nav>'+
+      '<div class="who"><button class="btn primary sm" data-act="nav" data-v="login">Sign in</button></div>';
+  }
+  return '<header class="top"><div class="wrap"><button class="brand" data-act="nav" data-v="'+(u?'home':'landing')+'" aria-label="'+UNI.name+' Campus Desk home">'+crest(28)+'<span class="bt"><b>'+UNI.name+'</b><small>Campus Desk · Student Complaint Desk</small></span></button>'+nav+'</div></header>';
+}
+function roleLabel(u){return u.role==='student'?FC[u.fac].n+' · ID '+u.id:u.role==='advisor'?'Advisor · '+DEPTS[u.dept].n:'Higher access'}
+function footer(){return '<footer class="foot2"><div class="wrap"><div><div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">'+crest(26)+'<b style="font:700 16px var(--f-display)">'+UNI.name+'</b></div><p>Campus Desk is the student complaint module of the university portal. Every complaint reaches the office that can solve it.</p></div>'+
+  '<div><h4>Student Voice</h4><ul><li>Public forum and upvotes</li><li>Make a complaint to the right department</li><li>Complaint answers archive</li></ul></div>'+
+  '<div><h4>Need help signing in?</h4><ul><li>Student Affairs, Building A, Room 112</li><li>Sun to Thu, 9 AM to 3 PM</li><li class="mono">studentvoice@ntu.example.edu</li></ul></div>'+
+  '<div class="fine">Prototype with demo data. Nothing here is sent to real staff.</div></div></footer>'}
+function ctxChips(t){
+  return '<div class="ctx"><span class="chip">'+esc(FC[t.fac||'eng'].n)+'</span>'+(t.courseName?'<span class="chip">Course: '+esc(t.courseName)+'</span>':'')+(t.course?'<span class="chip">Code: '+esc(t.course)+'</span>':'')+(t.priority==='urgent'?'<span class="badge b-late">Urgent</span>':'')+(t.attachment?'<span class="chip">Attachment: '+esc(t.attachment)+'</span>':'')+'</div>';
+}
+
+/* ---------- portal home ---------- */
+function greet(){var h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening'}
+function datesHTML(){
+  var cal=[[4,'Add/drop period closes'],[9,'Installment 3 payment due'],[18,'Midterm exams begin'],[40,'Course evaluations open'],[62,'Final exams begin']];
+  return cal.map(function(c){var d=new Date(Date.now()+c[0]*864e5);return '<div class="date'+(c[0]<=5?' soon':'')+'"><div class="d"><b>'+d.getDate()+'</b><small>'+d.toLocaleDateString('en-GB',{month:'short'})+'</small></div><div><b>'+c[1]+'</b><br><span class="muted" style="font-size:13px">In '+c[0]+' days</span></div></div>'}).join('');
+}
+function annHTML(n){
+  var list=D().announcements.slice(0,n||3);
+  return list.map(function(a){return '<div class="ann"><span class="chip">'+esc(a.tag)+'</span><h3>'+esc(a.title)+'</h3><p>'+esc(a.body)+'</p><small class="muted">'+esc(a.by)+' · '+ago(a.ts)+'</small></div>'}).join('')||'<p class="muted">No announcements.</p>';
+}
+function tRow(t,view){return '<button class="item" data-act="gotocomplaint" data-v="'+view+'" data-id="'+t.id+'"><div><span class="mono muted">'+t.id+'</span> '+(t.priority==='urgent'?'<span class="badge b-late">Urgent</span> ':'')+'<br><b>'+esc(t.title)+'</b><br><span class="muted" style="font-size:13px">'+(view==='inbox'?esc(t.studentName)+' · ':DEPTS[t.dept].n+' · ')+ago(t.created)+'</span></div>'+badge(t.status)+'</button>'}
+function pRow(p){return '<button class="item" data-act="gotopost" data-id="'+p.id+'"><div><b>'+esc(p.title)+'</b><br><span class="muted" style="font-size:13px">'+esc(C[p.cat].n)+' · '+ST[p.status]+'</span></div><span class="vote" style="pointer-events:none">'+IC.up+'<b>'+tv(p)+'</b></span></button>'}
+function kpi(l,v,s){return '<div class="kpi"><small>'+l+'</small><b>'+v+'</b><span>'+s+'</span></div>'}
+function vHome(){var u=S.user;return '<div class="wrap app">'+(u.role==='student'?homeStudent():u.role==='advisor'?homeAdvisor():homeMgr())+'</div>'}
+function homeStudent(){
+  var u=S.user,mine=myComplaints(),act=mine.filter(function(t){return !isResolved(t)}),top=D().posts.slice().sort(function(a,b){return tv(b)-tv(a)}).slice(0,3);
+  return '<section class="panel welcome"><div><h1>'+greet()+', '+esc(u.name.split(' ')[0])+'</h1><p class="muted" style="margin-top:8px">'+esc(u.program)+' · '+esc(u.level)+' · '+esc(FC[u.fac].n)+'</p>'+
+    '<div class="ctx"><span class="chip">Advisor: '+esc(u.advisor)+'</span><span class="chip">'+esc(u.email)+'</span></div>'+
+    '<div class="cta-row"><button class="btn primary" data-act="nav" data-v="newcomplaint">Make a complaint</button><button class="btn" data-act="nav" data-v="forum">Open the forum</button><button class="btn" data-act="nav" data-v="archive">Search complaint answers</button></div></div>'+
+    '<div class="idcard"><div class="band">'+crest(18)+UNI.name+'</div><div class="gold"></div><div class="bd"><div class="photo" aria-hidden="true">'+esc(initials(u.name))+'</div><div><b>'+esc(u.name)+'</b><small>ID '+esc(u.id)+'<br>'+esc(u.program)+'<br>Valid '+UNI.year+'</small></div></div><div class="code" aria-hidden="true"></div></div></section>'+
+  '<div class="homegrid"><section class="panel hg-8"><div class="head"><h2>My complaints</h2><button class="linkbtn" data-act="nav" data-v="complaints">View all ('+mine.length+')</button></div>'+
+    (act.length?act.slice(0,3).map(function(t){return tRow(t,'complaints')}).join(''):'<div class="empty"><b>No open complaints</b>Personal issue with grades, fees or registration? Make a complaint and it goes straight to the right advisor.</div>')+'</section>'+
+  '<section class="panel hg-4"><h2>Key dates</h2>'+datesHTML()+'</section>'+
+  '<section class="panel hg-8"><div class="head"><h2>Trending on campus</h2><button class="linkbtn" data-act="nav" data-v="forum">Open forum</button></div>'+top.map(pRow).join('')+'</section>'+
+  '<section class="panel hg-4"><h2>Announcements</h2>'+annHTML(2)+'</section></div>';
+}
+function homeAdvisor(){
+  var u=S.user,all=D().complaints.filter(function(t){return t.dept===u.dept}),need=all.filter(needsReply).sort(function(a,b){return (b.priority==='urgent')-(a.priority==='urgent')||a.created-b.created});
+  var prog=all.filter(function(t){return !isResolved(t)&&!needsReply(t)}).length,s30=all.filter(function(t){return t.solvedAt&&Date.now()-t.solvedAt<30*24*H}).length;
+  var fr=avg(all.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H}));
+  var tp=D().posts.filter(function(p){return C[p.cat].d===u.dept}).sort(function(a,b){return tv(b)-tv(a)}).slice(0,3);
+  return '<section class="panel welcome" style="grid-template-columns:minmax(0,1fr)"><div><h1>'+greet()+', '+esc(u.name.replace(/^(Dr|Eng|Mr|Ms|Prof)\.\s*/,'').split(' ')[0])+'</h1><p class="muted" style="margin-top:8px">'+DEPTS[u.dept].n+' · Staff ID '+esc(u.id)+'</p><div class="cta-row"><button class="btn primary" data-act="nav" data-v="inbox">Open complaint inbox</button><button class="btn" data-act="nav" data-v="forum">Reply on the forum</button></div></div></section>'+
+  '<div class="kpis in">'+kpi('Waiting for your reply',need.length,'target first reply '+SLA+' h')+kpi('Waiting on student',prog,'in progress')+kpi('Resolved in 30 days',s30,'department total')+kpi('Average first reply',fmtH(fr),fr!=null&&fr>SLA?'over target':'within target')+'</div>'+
+  '<div class="homegrid"><section class="panel hg-8"><div class="head"><h2>Waiting for your reply</h2><button class="linkbtn" data-act="nav" data-v="inbox">Open inbox</button></div>'+(need.length?need.slice(0,5).map(function(t){return tRow(t,'inbox')}).join(''):'<div class="empty"><b>All caught up</b>No student is waiting for a reply in your department.</div>')+'</section>'+
+  '<section class="panel hg-4"><h2>Key dates</h2>'+datesHTML()+'</section>'+
+  '<section class="panel hg-8"><div class="head"><h2>Top issues in your department</h2><button class="linkbtn" data-act="nav" data-v="forum">Open forum</button></div>'+(tp.length?tp.map(pRow).join(''):'<p class="muted">No forum issues for your department.</p>')+'</section>'+
+  '<section class="panel hg-4"><h2>Announcements</h2>'+annHTML(2)+'</section></div>';
+}
+function homeMgr(){
+  var T=D().complaints,P=D().posts,open=T.filter(function(t){return !isResolved(t)}).length;
+  var fr=avg(T.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H}));
+  var unans=P.filter(function(p){return tv(p)>=150&&!p.official}).sort(function(a,b){return tv(b)-tv(a)});
+  var slow=Object.keys(DEPTS).map(function(k){var r=T.filter(function(t){return t.dept===k&&t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H});return {n:DEPTS[k].n,a:avg(r)}}).filter(function(d){return d.a!=null&&d.a>SLA}).sort(function(a,b){return b.a-a.a});
+  var maxv=Math.max.apply(null,P.map(tv));
+  return '<section class="panel welcome" style="grid-template-columns:minmax(0,1fr)"><div><h1>'+greet()+', '+esc(MGR.name.replace(/^Prof\.\s*/,'Prof. ').split(' ').slice(0,2).join(' '))+'</h1><p class="muted" style="margin-top:8px">'+MGR.title+' · '+UNI.name+'</p><div class="cta-row"><button class="btn primary" data-act="nav" data-v="dash">Open the dashboard</button><button class="btn" data-act="nav" data-v="forum">Review the forum</button></div></div></section>'+
+  '<div class="kpis in">'+kpi('Open complaints',open,'across '+Object.keys(DEPTS).length+' departments')+kpi('Average first reply',fmtH(fr),'target '+SLA+' h')+kpi('Top issue votes',maxv,'students behind one problem')+kpi('Issues without a reply',unans.length,'150 votes or more')+'</div>'+
+  '<div class="homegrid"><section class="panel hg-8"><h2>Needs your attention</h2>'+
+    (unans.length?unans.slice(0,3).map(pRow).join(''):'')+
+    slow.map(function(d){return '<div class="item"><div><b>'+d.n+' is slow to reply</b><br><span class="muted" style="font-size:13px">Average first reply '+fmtH(d.a)+', target '+SLA+' h</span></div><span class="badge b-late">Over target</span></div>'}).join('')+
+    (!unans.length&&!slow.length?'<div class="empty"><b>Nothing urgent</b>Every big issue has a reply and every department is within target.</div>':'')+'</section>'+
+  '<form class="panel hg-4 stack" data-form="ann"><h2>Post an announcement</h2><label class="f"><span>Topic</span><select id="an-tag" data-bind="anntag">'+['General','Registration','Exams','Fees','IT','Facilities'].map(function(x){return '<option'+(dr('anntag','General')===x?' selected':'')+'>'+x+'</option>'}).join('')+'</select></label><label class="f"><span>Title</span><input type="text" id="an-t" data-bind="annt" value="'+esc(dr('annt'))+'" placeholder="Short and specific"></label><label class="f"><span>Message</span><textarea id="an-b" data-bind="annb" placeholder="What students need to know and do">'+esc(dr('annb'))+'</textarea></label><div class="field-err" id="an-err" role="alert"></div><button class="btn primary" type="submit">Publish to all students</button></form>'+
+  '<section class="panel hg-8"><h2>Announcements</h2>'+annHTML(4)+'</section>'+
+  '<section class="panel hg-4"><h2>Key dates</h2>'+datesHTML()+'</section></div>';
+}
+
+/* ---------- landing ---------- */
+function vLanding(){
+  var top=D().posts.slice().sort(function(a,b){return tv(b)-tv(a)}).slice(0,3);
+  var rows=top.map(function(p){var on=S.ui.demoVotes[p.id];var n=tv(p)+(on?1:0);
+    return '<div class="live-row"><button class="vote'+(on?' on':'')+'" data-act="demovote" data-id="'+p.id+'" aria-pressed="'+!!on+'" aria-label="Upvote: '+esc(p.title)+'">'+IC.up+'<b>'+n+'</b></button><div><p>'+esc(p.title)+'</p><small>'+esc(C[p.cat].n)+' · '+ST[p.status]+'</small></div></div>'}).join('');
+  return '<section class="hero"><div class="wrap"><div>'+
+    '<h1>Take the line off the hallway floor.</h1>'+
+    '<p class="lead">One place in the '+UNI.name+' portal for every student complaint. Vote on problems everyone shares, make a complaint to the right advisor, and search answers that are already solved.</p>'+
+    '<div class="cta-row"><button class="btn primary" data-act="nav" data-v="login">Sign in with student ID</button><button class="btn" data-act="scroll" data-t="how">See how it works</button></div></div>'+
+    '<div class="live"><div class="stub" style="--cut:62%" aria-hidden="true"><div><small>Now serving</small><span class="n">CD-2041</span></div><div class="side">Registrar<br>In progress</div></div>'+
+    '<h2>Most upvoted this week</h2><p class="muted" style="font-size:13px;margin-bottom:6px">Try it. The most upvoted problems jump to the top for the university to fix first.</p>'+rows+'</div></div></section>'+
+
+  '<section class="sec alt" id="problem"><div class="wrap split"><div><h2 class="t">Students have problems, but nowhere to take them.</h2><p class="sub">Everything right now is messy, slow, and unorganized.</p></div><div class="problems">'+
+    [['Huge lines at the Registrar','Students stand in busy lines for hours just to find out the Registrar desk cannot even help them with their issue.'],
+     ['Nobody knows who to ask','Students bounce from office to office between advisors, departments, and IT with zero clear direction.'],
+     ['Same questions every day','Staff waste hours answering the exact same complaints over and over because solved answers are not saved anywhere.'],
+     ['Big issues get ignored','When 500 students face the same problem, the university does not see how big it is until everyone complains in person.']].map(function(p,i){return '<div><span class="pnum">0'+(i+1)+'</span><div><h3>'+p[0]+'</h3><p>'+p[1]+'</p></div></div>'}).join('')+
+  '</div></div></section>'+
+
+  '<section class="sec" id="how"><div class="wrap"><h2 class="t">Log in once. Then pick the path that fits your problem.</h2><p class="sub">Students sign in with their university ID. Every route ends in an answer that is saved for the next student.</p>'+
+    '<div class="flow"><div><span class="ico">'+IC.forum+'</span><h3>Public forum</h3><p>Post general campus issues and upvote the ones that affect you. The most upvoted problems rise to the top for the university to fix first.</p></div>'+
+    '<div><span class="ico">'+IC.lock+'</span><h3>Make a complaint</h3><p>For personal issues like grades or registration. Your complaint goes straight to the right advisor, not the wrong desk, with live status.</p></div>'+
+    '<div><span class="ico">'+IC.search+'</span><h3>Solved archive</h3><p>Resolved complaints can be saved in a searchable archive. Students can find answers to common problems.</p></div></div></div></section>'+
+
+  '<section class="sec alt" id="access"><div class="wrap"><h2 class="t">Access levels</h2>'+
+    '<div class="roles"><div><h3>Student</h3><p class="muted">Search solved problems, post and upvote on the forum, or make a complaint.</p><ul><li>Public forum with upvotes</li><li>Complaints with live status</li><li>Searchable solved archive</li></ul></div>'+
+    '<div><h3>Advisor</h3><p class="muted">Reply to students, solve department complaints, and save answers to the database.</p><ul><li>Department complaint inbox</li><li>Official replies on the forum</li><li>Solve and save to archive</li></ul></div>'+
+    '<div><h3>Higher access</h3><p class="muted">Manage complaints across the university, assign departments and staff, update statuses, remove complaints, publish announcements, and review performance.</p><ul><li>View and manage complaints from every department</li><li>Assign complaints to departments and staff</li><li>Change status or delete a complaint</li><li>Manage forum responses and publish announcements</li><li>Review university-wide performance reports</li></ul></div></div></div></section>'+
+
+  '<section class="sec" id="why"><div class="wrap"><h2 class="t">Why this beats what students use today.</h2>'+
+    '<div class="tablebox"><table><thead><tr><th>Other options</th><th>Why they fail</th><th>What we offer instead</th></tr></thead><tbody>'+
+    [['Registrar desk and emails','Long physical lines, lost emails, and nobody knows who handles what.','Instant routing to the right advisor plus live complaint status.'],
+     ['WhatsApp and Facebook groups','Messy, unofficial, full of rumors, and university staff are not there.','An official university forum where upvotes bring real staff replies.'],
+     ['Big corporate tools (Zendesk)','Costs thousands of dollars a month and is not built for students.','Built specifically for our university at zero per-user license cost.']].map(function(r){return '<tr><td><b>'+r[0]+'</b></td><td>'+r[1]+'</td><td class="win">'+r[2]+'</td></tr>'}).join('')+
+    '</tbody></table></div>'+
+    '<h2 class="t" style="margin-top:64px">How this becomes a real success, not a side project.</h2>'+
+    '<div class="steps">'+
+    [['Real adoption','Plugged into the uni website','It lives directly on the official university website using student ID login.'],
+     ['Less work for staff','Empty the Registrar lines','The solved archive stops students from asking the same questions 100 times, so staff want to use it.'],
+     ['Smart rollout','Start in one faculty, then expand','Test with real advisors in one department, prove it cuts lines, then open it to the whole university.'],
+     ['Management power','Accountability at the top','Management sees which problems have the most upvotes and which departments are slow.']].map(function(s,i){return '<div><span class="mono">STEP 0'+(i+1)+' · '+s[0]+'</span><h3>'+s[1]+'</h3><p>'+s[2]+'</p></div>'}).join('')+
+    '</div></div></section>'+
+
+  '<section class="sec" style="padding-top:0"><div class="wrap"><div class="bottom"><h2>Fewer lines at the Registrar. Faster help from advisors. A memory of every solved problem.</h2><button class="btn" data-act="nav" data-v="login" style="background:var(--complaint);color:var(--complaint-ink)">Try the demo</button></div></div></section>';
+}
+
+/* ---------- login ---------- */
+function vLogin(){
+  var role=dr('role','student');
+  var idLabel=role==='student'?'Student ID':'Staff ID';
+  var idDef=role==='student'?STUDENT.id:role==='advisor'?'S-1042':MGR.id;
+  var dept=dr('dept','registrar'),fac=dr('fac','eng');
+  return '<section class="login"><div class="wrap"><aside>'+crest(44)+'<h2>'+UNI.name+' student portal</h2><p>Sign in to Campus Desk, the complaint module of the portal. This demo lets you try all three access levels with any password.</p><ul><li>Students post, upvote, open complaints and search answers</li><li>Advisors handle and assign department complaints</li><li>Higher access manages all complaints, announcements, forum updates and reports</li></ul><p style="font-size:13px">The live version uses the university single sign-on, so students sign in once for every portal service.</p></aside>'+
+  '<form data-form="login" novalidate><div><b>Choose how to sign in</b></div>'+
+  '<div class="rolepick" role="radiogroup" aria-label="Access level">'+
+    [['student','Student','Make complaints, use forum and archive'],['advisor','Advisor','Review, assign and resolve department complaints'],['mgr','Higher access','Manage all university operations']].map(function(r){return '<label><input type="radio" name="role" value="'+r[0]+'" data-bind="role" data-live="rerender"'+(role===r[0]?' checked':'')+'><b>'+r[1]+'</b><small>'+r[2]+'</small></label>'}).join('')+'</div>'+
+  '<label class="f"><span>'+idLabel+'</span><input type="text" id="lg-id" data-bind="lgid_'+role+'" value="'+esc(dr('lgid_'+role,idDef))+'" autocomplete="off"></label>'+
+  '<label class="f"><span>Password</span><input type="password" id="lg-pw" data-bind="lgpw" value="'+esc(dr('lgpw','demo1234'))+'" autocomplete="off"></label>'+
+  (role==='student'?'<label class="f"><span>Faculty</span><select id="lg-fac" data-bind="fac">'+FACS.map(function(f){return '<option value="'+f.id+'"'+(fac===f.id?' selected':'')+'>Faculty of '+f.n+'</option>'}).join('')+'</select></label>':'')+
+  (role==='advisor'?'<label class="f"><span>Department</span><select id="lg-dept" data-bind="dept">'+Object.keys(DEPTS).map(function(k){return '<option value="'+k+'"'+(dept===k?' selected':'')+'>'+DEPTS[k].n+'</option>'}).join('')+'</select></label>':'')+
+  '<div class="field-err" id="lg-err" role="alert"></div>'+
+  '<button class="btn primary" type="submit">Sign in</button><button class="btn ghost" type="button" data-act="nav" data-v="landing">Back to home</button></form></div></section>';
+}
+
+/* ---------- forum ---------- */
+function forumListHTML(){
+  var q=dr('fq').toLowerCase(),u=S.user;
+  var list=D().posts.filter(function(p){return (!S.ui.fcat||p.cat===S.ui.fcat)&&(!S.ui.ffac||p.fac===S.ui.ffac)&&(!q||(p.title+' '+p.body).toLowerCase().indexOf(q)>-1)});
+  list.sort(function(a,b){return S.ui.fsort==='top'?tv(b)-tv(a):b.ts-a.ts});
+  if(!list.length)return '<div class="empty"><b>No posts match</b>Try another search or category, or post this problem yourself.</div>';
+  return list.map(function(p){return postHTML(p,u)}).join('');
+}
+function postHTML(p,u){
+  var open=S.ui.openPost===p.id,voted=p.voters.indexOf(u.id)>-1,canVote=u.role==='student';
+  var h='<article class="post" id="post-'+p.id+'"><button class="vote'+(voted?' on':'')+'" data-act="vote" data-id="'+p.id+'" aria-pressed="'+voted+'" aria-label="Upvote"'+(canVote?'':' disabled title="Only students can upvote"')+'>'+IC.up+'<b>'+tv(p)+'</b></button><div style="min-width:0">'+
+   '<div class="meta">'+catChip(p.cat)+'<span class="chip">'+esc(FC[p.fac||'eng'].n)+'</span><span>'+esc(p.author)+' · '+ago(p.ts)+'</span></div><h3>'+esc(p.title)+'</h3><p class="body">'+esc(p.body)+'</p>';
+  if(p.official)h+='<div class="official"><small>Official reply · '+esc(p.official.by)+' · '+ago(p.official.ts)+'</small>'+esc(p.official.text)+'</div>';
+  h+='<div class="foot">'+badge(p.status)+'<button class="linkbtn" data-act="togglepost" data-id="'+p.id+'" aria-expanded="'+open+'">'+(open?'Hide':'')+(open?' discussion':p.comments.length+' comment'+(p.comments.length===1?'':'s'))+'</button></div>';
+  if(open){
+    h+='<div class="thread">'+(p.comments.length?p.comments.map(function(c){return '<div class="cm'+(c.role!=='student'?' staff':'')+'"><small>'+esc(c.by)+(c.role!=='student'?' · Staff':'')+' · '+ago(c.ts)+'</small>'+esc(c.text)+'</div>'}).join(''):'<p class="muted">No comments yet.</p>')+
+     '<div class="inline"><input type="text" id="cm-'+p.id+'" data-bind="cm_'+p.id+'" value="'+esc(dr('cm_'+p.id))+'" placeholder="Add a comment" aria-label="Add a comment"><button class="btn sm primary" data-act="comment" data-id="'+p.id+'">Comment</button></div>';
+    if(u.role!=='student'){
+      h+='<label class="f"><span>Official reply <small>Shown on the post for all students</small></span><textarea id="of-'+p.id+'" data-bind="of_'+p.id+'" placeholder="Write the university’s reply">'+esc(dr('of_'+p.id,p.official?p.official.text:''))+'</textarea></label>'+
+        '<div class="inline"><select id="ps-'+p.id+'" data-bind="ps_'+p.id+'" aria-label="Post status">'+['open','review','replied','solved'].map(function(s){return '<option value="'+s+'"'+(dr('ps_'+p.id,p.status===s?s:p.status)===s?' selected':'')+'>'+ST[s]+'</option>'}).join('')+'</select><button class="btn sm primary" data-act="official" data-id="'+p.id+'">Publish reply</button></div>';
+    }
+    h+='</div>';
+  }
+  return h+'</div></article>';
+}
+function vForum(){
+  var u=S.user,isS=u.role==='student';
+  return '<div class="wrap app"><div class="pagehead"><div><h1>Public forum</h1><p>Shared campus problems. The most upvoted rise to the top for the university to fix first.</p></div></div>'+
+   '<div class="cols"><div><div class="toolbar"><div class="seg" role="group" aria-label="Sort"><button data-act="fsort" data-v="top" aria-pressed="'+(S.ui.fsort==='top')+'">Top</button><button data-act="fsort" data-v="new" aria-pressed="'+(S.ui.fsort==='new')+'">Newest</button></div>'+
+   '<input class="grow" type="search" id="fq" data-bind="fq" data-live="forum" value="'+esc(dr('fq'))+'" placeholder="Search the forum" aria-label="Search the forum"><select id="ffac" data-chg="ffac" aria-label="Faculty" style="width:auto"><option value="">All faculties</option>'+FACS.map(function(f){return '<option value="'+f.id+'"'+(S.ui.ffac===f.id?' selected':'')+'>'+f.n+'</option>'}).join('')+'</select></div>'+
+   '<div class="pills" style="margin-bottom:16px"><button data-act="fcat" data-v="" aria-pressed="'+(!S.ui.fcat)+'">All</button>'+CATS.map(function(c){return '<button data-act="fcat" data-v="'+c.id+'" aria-pressed="'+(S.ui.fcat===c.id)+'">'+c.n+'</button>'}).join('')+'</div>'+
+   '<div class="stack" id="flist">'+forumListHTML()+'</div></div>'+
+   '<aside class="side">'+(isS?
+     '<form class="panel stack" data-form="post"><h2>Post a problem</h2><p class="muted" style="font-size:13px;margin-top:-6px">Use this for issues many students share. For personal issues, <button type="button" class="linkbtn" data-act="nav" data-v="newcomplaint">make a complaint</button>.</p>'+
+     '<label class="f"><span>Category</span><select id="pc" data-bind="pcat">'+CATS.map(function(c){return '<option value="'+c.id+'"'+(dr('pcat','grades')===c.id?' selected':'')+'>'+c.n+'</option>'}).join('')+'</select></label>'+
+     '<label class="f"><span>Title</span><input type="text" id="pt" data-bind="ptitle" value="'+esc(dr('ptitle'))+'" placeholder="What is the problem?"></label>'+
+     '<label class="f"><span>Details</span><textarea id="pb" data-bind="pbody" placeholder="Where, when, and who is affected">'+esc(dr('pbody'))+'</textarea></label>'+
+     '<div class="field-err" id="post-err" role="alert"></div><button class="btn primary" type="submit">Post to forum</button></form>'
+     :'<div class="panel"><h2>Staff view</h2><p class="muted">Open a post to publish an official reply and set its status. Students see your reply under the post and get notified in their feed.</p></div>')+
+   '<div class="panel"><h2>Before you post</h2><p class="muted">Search the <button class="linkbtn" data-act="nav" data-v="archive">solved archive</button>. Many problems already have a step-by-step answer.</p></div></aside></div></div>';
+}
+
+/* ---------- student complaints ---------- */
+function myComplaints(){return D().complaints.filter(function(t){return t.studentId===S.user.id}).sort(function(a,b){return b.created-a.created})}
+function tracker(t){
+  var order={submitted:1,underreview:2,assigned:3,inprogress:4,resolved:5,closed:6,solved:5},step=order[t.status]||1;
+  return '<div class="tracker">'+['Submitted','Under review','Assigned','In progress','Resolved','Closed'].map(function(l,i){return '<div class="'+(i<step?'done':'')+'">'+l+'</div>'}).join('')+'</div>';
+}
+function threadHTML(t,viewerStaff){
+  return '<div class="stack">'+t.messages.map(function(m){var staff=m.from==='staff';
+    return '<div class="bubble'+(staff?' staff':'')+'"><small>'+esc(m.name)+(staff?' · '+DEPTS[t.dept].n:'')+' · '+ago(m.ts)+'</small>'+esc(m.text)+'</div>'}).join('')+'</div>';
+}
+function vComplaints(){
+  var list=myComplaints(),sel=list.filter(function(t){return t.id===S.ui.openComplaint})[0]||list[0];
+  var h='<div class="wrap app"><div class="pagehead"><div><h1>My complaints</h1><p>Your complaint and replies from the staff member handling it.</p></div><button class="btn primary" data-act="nav" data-v="newcomplaint">Make a complaint</button></div>';
+  if(!list.length)return h+'<div class="empty"><b>No complaints yet</b>Make a complaint for personal issues like grades or registration.</div></div>';
+  h+='<div class="cols rev"><div class="tlist">'+list.map(function(t){return '<button class="titem" data-act="opencomplaint" data-id="'+t.id+'" aria-current="'+(sel&&sel.id===t.id)+'"><div class="row"><span class="mono muted">'+t.id+'</span>'+badge(t.status)+'</div><strong>'+esc(t.title)+'</strong><span class="muted" style="font-size:13px">'+DEPTS[t.dept].n+' · '+ago(t.created)+'</span></button>'}).join('')+'</div>';
+  h+='<div class="panel"><div class="row" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span class="mono muted">'+sel.id+'</span>'+badge(sel.status)+'</div><h2 style="font-size:22px;margin:8px 0 4px">'+esc(sel.title)+'</h2><p class="muted">Handled by '+esc(sel.assignee)+', '+DEPTS[sel.dept].n+'</p>'+ctxChips(sel)+tracker(sel)+threadHTML(sel);
+  if(isResolved(sel)){
+    h+='<div class="inline" style="margin-top:16px;align-items:center"><span class="badge b-solved">'+ST[sel.status]+' '+ago(sel.solvedAt)+'</span><button class="btn sm" data-act="reopen" data-id="'+sel.id+'">Reopen</button></div>';
+  }else{
+    h+='<div class="stack" style="margin-top:16px"><textarea id="tr" data-bind="tr_'+sel.id+'" placeholder="Write a reply" aria-label="Reply to advisor">'+esc(dr('tr_'+sel.id))+'</textarea><div><button class="btn primary" data-act="studentreply" data-id="'+sel.id+'">Send reply</button></div></div>';
+  }
+  return h+'</div></div></div>';
+}
+function suggestHTML(){
+  var q=dr('ntitle')+' '+dr('nbody');
+  if(q.trim().length<4)return '';
+  var m=matchArchive(q,true).slice(0,3);
+  if(!m.length)return '';
+  return '<div class="sugg"><h3>These solved answers may fix it without a complaint</h3>'+m.map(function(a){return '<article><b>'+esc(a.title)+'</b><ol style="margin:0;padding-left:18px">'+a.answer.map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ol><div><button class="btn sm primary" data-act="solvedme" data-id="'+a.id+'">This fixed my problem</button></div></article>'}).join('')+'</div>';
+}
+function vNewComplaint(){
+  var u=S.user,cat=dr('ncat','grades');
+  return '<div class="wrap app"><div class="pagehead"><div><h1>New complaint</h1><p>Goes straight to the right advisor. Not the wrong desk.</p></div></div><div class="cols"><form class="panel stack" data-form="complaint">'+
+   '<label class="f"><span>What is it about?</span><select id="nc" data-bind="ncat" data-live="routing">'+CATS.map(function(c){return '<option value="'+c.id+'"'+(cat===c.id?' selected':'')+'>'+c.n+'</option>'}).join('')+'</select></label>'+
+   '<div class="route" id="route" aria-live="polite">'+routeHTML(cat)+'</div>'+
+   '<label class="f"><span>Subject</span><input type="text" id="nt" data-bind="ntitle" data-live="suggest" value="'+esc(dr('ntitle'))+'" placeholder="One line that names the problem"></label>'+
+   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px"><label class="f"><span>Course name <small>Optional</small></span><input type="text" id="ncn" data-bind="ncourseName" value="'+esc(dr('ncourseName'))+'" placeholder="For example Calculus II"></label>'+
+   '<label class="f"><span>Course code <small>Optional</small></span><input type="text" id="ncr" data-bind="ncourse" value="'+esc(dr('ncourse'))+'" placeholder="For example MATH 201"></label>'+
+   '<label class="f"><span>Priority</span><select id="npr" data-bind="nprio"><option value="normal"'+(dr('nprio','normal')==='normal'?' selected':'')+'>Normal</option><option value="urgent"'+(dr('nprio')==='urgent'?' selected':'')+'>Urgent: deadline within 48 hours</option></select></label></div>'+
+   '<label class="f"><span>Details</span><textarea id="nb" data-bind="nbody" data-live="suggest" placeholder="Dates, receipt numbers, anything that helps the advisor">'+esc(dr('nbody'))+'</textarea></label>'+
+   '<label class="f"><span>Attachment <small>Receipt, screenshot or letter. Optional</small></span><input type="file" id="nf" data-bind="nfile" data-live="attach"></label><div class="fileline" id="attname">'+(dr('nfile')?'Attached: '+esc(dr('nfile')):'')+'</div>'+
+   '<div id="sugg">'+suggestHTML()+'</div><div class="field-err" id="t-err" role="alert"></div><div><button class="btn primary" type="submit">Submit complaint</button></div></form>'+
+   '<aside class="side"><div class="panel"><h2>Sent with your complaint</h2><div class="stack"><p><span class="muted">Student</span><br><b>'+esc(u.name)+'</b> · ID '+esc(u.id)+'</p><p><span class="muted">Faculty and program</span><br><b>'+esc(FC[u.fac].n)+'</b> · '+esc(u.program)+', '+esc(u.level)+'</p><p><span class="muted">Your academic advisor</span><br><b>'+esc(u.advisor)+'</b></p></div></div>'+
+   '<div class="panel"><h2>What happens next</h2><div class="stack"><p><b>1. Routed.</b> <span class="muted">Your complaint is assigned to a named advisor in the right department.</span></p><p><b>2. Tracked.</b> <span class="muted">You see live status: Submitted, Under review, Assigned, In progress, Resolved or Closed.</span></p><p><b>3. Saved.</b> <span class="muted">Advisors save the solution to the archive, so the next student finds it instantly.</span></p></div></div></aside></div></div>';
+}
+function routeHTML(cat){var d=C[cat].d;return '<span class="mono" aria-hidden="true">&rarr;</span><div>Routed to '+DEPTS[d].n+'<small>Assigned to '+esc(nextStaff(d))+' on send</small></div>'}
+function nextStaff(d){
+  var st=DEPTS[d].staff,load=st.map(function(n){return D().complaints.filter(function(t){return t.assignee===n&&!isResolved(t)}).length});
+  return st[load.indexOf(Math.min.apply(null,load))];
+}
+
+/* ---------- archive ---------- */
+function matchArchive(q,minimal){
+  var t=q.toLowerCase().split(/[^a-z0-9]+/).filter(function(w){return w.length>2});
+  var list=D().archive.slice();
+  if(S.ui.arcCat&&!minimal)list=list.filter(function(a){return a.cat===S.ui.arcCat});
+  if(!t.length)return minimal?[]:list.sort(function(a,b){return b.helpful-a.helpful});
+  return list.map(function(a){var hay=(a.title+' '+a.answer.join(' ')+' '+C[a.cat].n).toLowerCase(),s=0;
+    t.forEach(function(w){if(hay.indexOf(w)>-1)s++;if(a.title.toLowerCase().indexOf(w)>-1)s+=2});return {a:a,s:s}})
+    .filter(function(x){return x.s>0}).sort(function(x,y){return y.s-x.s||y.a.helpful-x.a.helpful}).map(function(x){return x.a});
+}
+function archiveListHTML(){
+  var list=matchArchive(dr('aq'));
+  if(!list.length)return '<div class="empty"><b>No solved answer matches yet</b>'+(S.user.role==='student'?'Try other words, or <button class="linkbtn" data-act="nav" data-v="newcomplaint">make a complaint</button>. Your advisor will save the answer here.':'Answers appear here when advisors solve complaints and save them.')+'</div>';
+  return list.map(function(a){
+    var did=S.ui.helped[a.id];
+    return '<details class="ans"><summary><div class="row">'+catChip(a.cat)+'<span>'+DEPTS[a.dept].n+'</span><span>·</span><span>Solved '+ago(a.ts)+'</span></div><h3>'+esc(a.title)+'</h3><span class="muted" style="font-size:13px">'+a.helpful+' students fixed this themselves</span></summary><div class="in"><ol>'+a.answer.map(function(s){return '<li>'+esc(s)+'</li>'}).join('')+'</ol><div class="row"><span>Answer by '+esc(a.by)+'</span>'+
+      (S.user.role==='student'?'<button class="btn sm'+(did?'':' primary')+'" data-act="helpful" data-id="'+a.id+'"'+(did?' disabled':'')+'>'+(did?'Thanks for confirming':'This fixed my problem')+'</button>':'')+'</div></div></details>';
+  }).join('');
+}
+function vArchive(){
+  return '<div class="wrap app"><div class="pagehead"><div><h1>Complaint answers archive</h1><p>Every solved problem, searchable. Find your exact issue and fix it in seconds.</p></div></div>'+
+   '<div class="toolbar"><input class="grow" type="search" id="aq" data-bind="aq" data-live="archive" value="'+esc(dr('aq'))+'" placeholder="Search, for example: password, receipt, prerequisite" aria-label="Search solved problems"></div>'+
+   '<div class="pills" style="margin-bottom:16px"><button data-act="acat" data-v="" aria-pressed="'+(!S.ui.arcCat)+'">All</button>'+CATS.map(function(c){return '<button data-act="acat" data-v="'+c.id+'" aria-pressed="'+(S.ui.arcCat===c.id)+'">'+c.n+'</button>'}).join('')+'</div>'+
+   '<div class="stack" id="alist" style="max-width:860px">'+archiveListHTML()+'</div></div>';
+}
+
+/* ---------- advisor inbox ---------- */
+function needsReply(t){return !isResolved(t)&&t.messages[t.messages.length-1].from==='student'}
+function statusOptions(selected){return TICKET_STATES.map(function(s){return '<option value=\"'+s+'\"'+(selected===s?' selected':'')+'>'+TICKET_ST[s]+'</option>'}).join('')}
+function vInbox(){
+  var u=S.user,isAdmin=u.role==='mgr';
+  var all=D().complaints.filter(function(t){return isAdmin||t.dept===u.dept});
+  var f=S.ui.ifilter||'all';
+  var list=all.filter(function(t){return f==='all'||(f==='need'&&needsReply(t))||(f==='prog'&&!isResolved(t)&&!needsReply(t))||(f==='done'&&isResolved(t))}).sort(function(a,b){return (b.priority==='urgent')-(a.priority==='urgent')||b.created-a.created});
+  var sel=list.filter(function(t){return t.id===S.ui.openComplaint})[0]||list[0];
+  var cnt={need:all.filter(needsReply).length,prog:all.filter(function(t){return !isResolved(t)&&!needsReply(t)}).length,done:all.filter(isResolved).length,all:all.length};
+  var title=isAdmin?'All complaints':DEPTS[u.dept].n+' complaints';
+  var h='<div class=\"wrap app\"><div class=\"pagehead\"><div><h1>'+title+'</h1><p>'+cnt.need+' complaint'+(cnt.need===1?'':'s')+' waiting for a reply. First reply target: '+SLA+' hours. Use the controls below to route, update or close a complaint.</p></div></div>'+
+   '<div class=\"pills\" style=\"margin-bottom:16px\">'+[['need','Needs reply'],['prog','In progress'],['done','Resolved / closed'],['all','All']].map(function(x){return '<button data-act=\"ifilter\" data-v=\"'+x[0]+'\" aria-pressed=\"'+(f===x[0])+'\">'+x[1]+' ('+cnt[x[0]]+')</button>'}).join('')+'</div>';
+  if(!list.length)return h+'<div class=\"empty\"><b>No complaints here</b>There are no complaints in this filter.</div></div>';
+  h+='<div class=\"cols rev\"><div class=\"tlist\">'+list.map(function(t){var late=!t.firstResponse&&!isResolved(t)&&(Date.now()-t.created)/H>SLA;
+    return '<button class=\"titem\" data-act=\"opencomplaint\" data-id=\"'+t.id+'\" aria-current=\"'+(sel&&sel.id===t.id)+'\"><div class=\"row\"><span class=\"mono muted\">'+t.id+'</span>'+(t.priority==='urgent'?'<span class=\"badge b-late\">Urgent</span> ':'')+(late?'<span class=\"badge b-late\">Past '+SLA+' h</span>':badge(t.status))+'</div><strong>'+esc(t.title)+'</strong><span class=\"muted\" style=\"font-size:13px\">'+esc(t.studentName)+' · '+DEPTS[t.dept].n+' · '+ago(t.created)+'</span></button>'}).join('')+'</div>';
+  h+='<div class=\"panel\"><div style=\"display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap\"><span class=\"mono muted\">'+sel.id+' · '+esc(C[sel.cat].n)+'</span>'+badge(sel.status)+'</div><h2 style=\"font-size:22px;margin:8px 0 4px\">'+esc(sel.title)+'</h2><p class=\"muted\">From '+esc(sel.studentName)+' (ID '+esc(sel.studentId)+'), opened '+ago(sel.created)+'</p>'+ctxChips(sel)+tracker(sel)+threadHTML(sel,true)+
+   '<div class=\"stack\" style=\"margin-top:16px\"><div class=\"panel\" style=\"background:var(--surface-2)\"><h2 style=\"font-size:16px\">Complaint workflow</h2><div class=\"stack\">'+
+   '<label class=\"f\"><span>Department</span><select data-chg=\"complaintdept\" data-id=\"'+sel.id+'\">'+Object.keys(DEPTS).map(function(k){return '<option value=\"'+k+'\"'+(sel.dept===k?' selected':'')+'>'+DEPTS[k].n+'</option>'}).join('')+'</select></label>'+
+   '<label class=\"f\"><span>Status</span><select data-chg=\"complaintstatus\" data-id=\"'+sel.id+'\">'+statusOptions(sel.status)+'</select></label>'+
+   '<label class=\"f\"><span>Assigned staff</span><select data-chg=\"assign\" data-id=\"'+sel.id+'\">'+DEPTS[sel.dept].staff.map(function(n){return '<option'+(sel.assignee===n?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select></label></div>'+
+   '<div class=\"inline\" style=\"margin-top:12px\"><button class=\"btn\" data-act=\"deleteticket\" data-id=\"'+sel.id+'\">Delete complaint</button></div></div>';
+  if(!isResolved(sel)){
+    var last='';for(var i=sel.messages.length-1;i>=0;i--){if(sel.messages[i].from==='staff'&&sel.messages[i].text!=='Marked as resolved.'){last=sel.messages[i].text;break}}
+    h+='<label class=\"f\"><span>Reply to student</span><textarea id=\"sr\" data-bind=\"sr_'+sel.id+'\" placeholder=\"Write a clear next step\">'+esc(dr('sr_'+sel.id))+'</textarea></label><button class=\"btn primary\" data-act=\"staffreply\" data-id=\"'+sel.id+'\">Send reply</button>'+
+     '<div class=\"panel\" style=\"background:var(--surface-2)\"><h2 style=\"font-size:16px\">Resolve and save to archive</h2><label class=\"f\"><span>Final answer <small>One step per line. Students will see this in the solved archive.</small></span><textarea id=\"fa\" data-bind=\"fa_'+sel.id+'\" placeholder=\"Step 1\nStep 2\">'+esc(dr('fa_'+sel.id,last))+'</textarea></label><div class=\"field-err\" id=\"fa-err\" role=\"alert\"></div><label style=\"display:flex;gap:8px;align-items:center;margin:6px 0 12px\"><input type=\"checkbox\" id=\"fa-save\" checked> Save this answer to the archive</label><button class=\"btn primary\" data-act=\"solve\" data-id=\"'+sel.id+'\">Mark resolved</button></div>';
+  }else h+='<span class=\"badge b-solved\">'+TICKET_ST[sel.status]+' '+ago(sel.solvedAt)+'</span>';
+  return h+'</div></div></div></div>';
+}
+/* ---------- dashboard ---------- */
+function avg(a){return a.length?a.reduce(function(x,y){return x+y},0)/a.length:null}
+function fmtH(h){return h==null?'n/a':(h<10?h.toFixed(1):Math.round(h))+' h'}
+function facTable(){var T=D().complaints,P=D().posts;
+ return '<div class="panel" style="margin-top:20px"><h2>By faculty</h2><div class="tablebox flat"><table><thead><tr><th>Faculty</th><th class="num">Complaints</th><th class="num">Open</th><th class="num">Forum posts</th><th class="num">Top issue votes</th><th class="num">Avg first reply</th></tr></thead><tbody>'+FACS.map(function(f){var ts=T.filter(function(t){return t.fac===f.id}),ps=P.filter(function(p){return p.fac===f.id});var r=ts.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H});return '<tr><td><b>Faculty of '+f.n+'</b></td><td class="num">'+ts.length+'</td><td class="num">'+ts.filter(function(t){return !isResolved(t)}).length+'</td><td class="num">'+ps.length+'</td><td class="num">'+(ps.length?Math.max.apply(null,ps.map(tv)):0)+'</td><td class="num">'+fmtH(avg(r))+'</td></tr>'}).join('')+'</tbody></table></div></div>'}
+function vDash(){
+  var fq=S.ui.dfac||'',T=D().complaints.filter(function(t){return !fq||t.fac===fq}),P=D().posts.filter(function(p){return !fq||p.fac===fq}),A=D().archive;
+  var frs=T.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H});
+  var open=T.filter(function(t){return !isResolved(t)}).length;
+  var solved30=T.filter(function(t){return t.solvedAt&&Date.now()-t.solvedAt<30*24*H}).length;
+  var deflect=A.reduce(function(s,a){return s+a.helpful},0);
+  var depts=Object.keys(DEPTS).map(function(k){var ts=T.filter(function(t){return t.dept===k});var r=ts.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H});
+    return {k:k,n:DEPTS[k].n,total:ts.length,open:ts.filter(function(t){return !isResolved(t)}).length,avg:avg(r)}}).sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+  var staff=[];Object.keys(DEPTS).forEach(function(k){DEPTS[k].staff.forEach(function(n){var ts=T.filter(function(t){return t.assignee===n});var r=ts.filter(function(t){return t.firstResponse}).map(function(t){return (t.firstResponse-t.created)/H});
+    staff.push({n:n,d:DEPTS[k].n,handled:ts.length,solved:ts.filter(function(t){return isResolved(t)}).length,avg:avg(r)})})});
+  staff.sort(function(a,b){return (b.avg||0)-(a.avg||0)});
+  var top=P.slice().sort(function(a,b){return tv(b)-tv(a)}).slice(0,6);
+  var cats=CATS.map(function(c){var ts=T.filter(function(t){return t.cat===c.id});return {n:c.n,open:ts.filter(function(t){return !isResolved(t)}).length,solved:ts.filter(function(t){return isResolved(t)}).length}});
+  var maxC=Math.max.apply(null,cats.map(function(c){return c.open+c.solved}))||1;
+
+  var h='<div class="wrap app"><div class="pagehead"><div><h1>Higher access dashboard</h1><p>What students are upvoting, and which departments are slow to respond.</p></div><label class="f" style="min-width:220px"><span>Faculty</span><select id="dfac" data-chg="dfac"><option value="">All faculties</option>'+FACS.map(function(f){return '<option value="'+f.id+'"'+(fq===f.id?' selected':'')+'>Faculty of '+f.n+'</option>'}).join('')+'</select></label></div>'+
+   '<div class="kpis"><div class="kpi"><small>Open complaints</small><b>'+open+'</b><span>of '+T.length+' this term</span></div><div class="kpi"><small>Average first reply</small><b>'+fmtH(avg(frs))+'</b><span>Target '+SLA+' h</span></div><div class="kpi"><small>Resolved in 30 days</small><b>'+solved30+'</b><span>complaints closed</span></div><div class="kpi"><small>Fixed from the archive</small><b>'+deflect+'</b><span>questions that never became complaints</span></div></div>'+
+   '<div class="panel"><h2>Top upvoted issues</h2><div class="tablebox flat"><table><thead><tr><th class="num">Votes</th><th>Issue</th><th>Owner</th><th>Status</th><th>Update</th></tr></thead><tbody>'+
+   top.map(function(p){return '<tr><td class="num"><b>'+tv(p)+'</b></td><td style="min-width:240px"><b>'+esc(p.title)+'</b><br><span class="muted" style="font-size:13px">'+esc(C[p.cat].n)+' · '+ago(p.ts)+'</span></td><td>'+DEPTS[C[p.cat].d].n+'</td><td>'+badge(p.status)+'</td><td><select class="sel" data-chg="poststatus" data-id="'+p.id+'" aria-label="Set status for '+esc(p.title)+'" style="width:auto">'+['open','review','replied','solved'].map(function(s){return '<option value="'+s+'"'+(p.status===s?' selected':'')+'>'+ST[s]+'</option>'}).join('')+'</select></td></tr>'}).join('')+
+   '</tbody></table></div></div>'+
+   '<div class="grid2"><div class="panel"><h2>First reply time by department</h2><div class="bars">'+depts.map(function(d){var w=d.avg==null?0:Math.min(d.avg/48*100,100);return '<div class="bar"><span>'+d.n+'</span><div class="tr"><div class="fill'+(d.avg>SLA?' late':'')+'" style="width:'+w+'%"></div><div class="sla"></div></div><span class="v">'+fmtH(d.avg)+'</span></div>'}).join('')+'</div>'+
+     '<div class="axis"><span></span><div><span style="left:0;transform:none">0 h</span><span style="left:50%">'+SLA+' h target</span><span style="left:100%;transform:translateX(-100%)">48 h</span></div><span></span></div></div>'+
+   '<div class="panel"><h2>Complaints by category</h2><div class="legend"><span><i style="background:var(--warn)"></i>Open</span><span><i style="background:var(--ok)"></i>Solved</span></div><div class="bars">'+cats.map(function(c){return '<div class="bar"><span>'+c.n+'</span><div class="stack-bar" style="width:'+((c.open+c.solved)/maxC*100)+'%;min-width:8px"><i style="background:var(--warn);width:'+(c.open/((c.open+c.solved)||1)*100)+'%"></i><i style="background:var(--ok);flex:1"></i></div><span class="v">'+(c.open+c.solved)+'</span></div>'}).join('')+'</div></div></div>'+
+   facTable()+'<div class="panel" style="margin-top:20px"><h2>Staff speed</h2><div class="tablebox flat"><table><thead><tr><th>Staff</th><th>Department</th><th class="num">Handled</th><th class="num">Solved</th><th class="num">Avg first reply</th></tr></thead><tbody>'+
+   staff.map(function(s){return '<tr><td><b>'+esc(s.n)+'</b></td><td>'+s.d+'</td><td class="num">'+s.handled+'</td><td class="num">'+s.solved+'</td><td class="num">'+(s.avg!=null&&s.avg>SLA?'<span class="badge b-late">'+fmtH(s.avg)+'</span>':fmtH(s.avg))+'</td></tr>'}).join('')+'</tbody></table></div></div></div>';
+  return h;
+}
+
+/* ---------- render ---------- */
+function render(){
+  var u=S.user,v=S.view,body;
+  if(v!=='landing'&&v!=='login'&&!u){v='landing';S.view=v}
+  if(v==='home')body=vHome();
+  else if(v==='landing')body=vLanding();
+  else if(v==='login')body=vLogin();
+  else if(v==='forum')body=vForum();
+  else if(v==='complaints')body=vComplaints();
+  else if(v==='newcomplaint')body=vNewComplaint();
+  else if(v==='archive')body=vArchive();
+  else if(v==='inbox')body=vInbox();
+  else if(v==='dash')body=vDash();
+  else body=vLanding();
+  $('#app').innerHTML=uniBar()+header()+'<main>'+body+'</main>'+footer();
+  save();
+}
+
+/* ---------- actions ---------- */
+var A={
+  nav:function(d){if(d.v==='landing'&&S.user){go(home(S.user.role));return}go(d.v)},
+  scroll:function(d){var el=document.getElementById(d.t);if(el)el.scrollIntoView({behavior:'smooth'})},
+  bell:function(){if(!S.ui.bell){S.ui.prevSeen=S.seen;S.seen=Date.now()}S.ui.bell=!S.ui.bell;render()},
+  notif:function(d){S.ui.bell=false;if(d.go==='forum')go('forum',{openPost:d.post||null});else go(d.go,{openComplaint:d.id||null,ifilter:'all'})},
+  gotocomplaint:function(d){go(d.v,{openComplaint:d.id,ifilter:'all'})},
+  gotopost:function(d){go('forum',{openPost:d.id,fcat:'',ffac:'',fsort:'top'})},
+  logout:function(){S.ui.bell=false;S.user=null;S.ui.draft={};go('landing');toast('Signed out')},
+  demovote:function(d){S.ui.demoVotes[d.id]=!S.ui.demoVotes[d.id];var y=window.scrollY;render();window.scrollTo(0,y)},
+  vote:function(d){var p=D().posts.filter(function(x){return x.id===d.id})[0];var i=p.voters.indexOf(S.user.id);if(i>-1)p.voters.splice(i,1);else p.voters.push(S.user.id);keep(function(){render()})},
+  togglepost:function(d){S.ui.openPost=S.ui.openPost===d.id?null:d.id;keep(render)},
+  fsort:function(d){S.ui.fsort=d.v;keep(render)},
+  fcat:function(d){S.ui.fcat=d.v;keep(render)},
+  acat:function(d){S.ui.arcCat=d.v;keep(render)},
+  ifilter:function(d){S.ui.ifilter=d.v;S.ui.openComplaint=null;render()},
+  opencomplaint:function(d){S.ui.openComplaint=d.id;keep(render)},
+  comment:function(d){var t=dr('cm_'+d.id).trim();if(!t)return toast('Write a comment first');var p=D().posts.filter(function(x){return x.id===d.id})[0];
+    p.comments.push({by:S.user.name,role:S.user.role,text:t,ts:Date.now()});S.ui.draft['cm_'+d.id]='';keep(render);toast('Comment added')},
+  official:function(d){var p=D().posts.filter(function(x){return x.id===d.id})[0];var t=dr('of_'+d.id,p.official?p.official.text:'').trim();var st=dr('ps_'+d.id,p.status);
+    if(!t)return toast('Write the official reply first');
+    p.official={by:S.user.name+' ('+(S.user.role==='advisor'?DEPTS[S.user.dept].n:'Management')+')',text:t,ts:Date.now()};p.status=st==='open'?'replied':st;
+    keep(render);toast('Official reply published')},
+  studentreply:function(d){var t=dr('tr_'+d.id).trim();if(!t)return toast('Write a reply first');var k=tk(d.id);k.messages.push({from:'student',name:S.user.name,text:t,ts:Date.now()});S.ui.draft['tr_'+d.id]='';keep(render);toast('Reply sent')},
+  staffreply:function(d){var t=dr('sr_'+d.id).trim();if(!t)return toast('Write a reply first');var k=tk(d.id);
+    k.messages.push({from:'staff',name:S.user.name,text:t,ts:Date.now()});if(!k.firstResponse)k.firstResponse=Date.now();k.status='inprogress';S.ui.draft['sr_'+d.id]='';keep(render);toast('Reply sent to student')},
+  deleteticket:function(d){if(!confirm('Delete this complaint permanently from the demo?'))return;S.data.complaints=S.data.complaints.filter(function(t){return t.id!==d.id});S.ui.openComplaint=null;keep(render);toast('Complaint deleted')}, solve:function(d){var k=tk(d.id);var ans=dr('fa_'+d.id,'').trim();var save=$('#fa-save').checked;
+    if(save&&!ans){$('#fa-err').textContent='Add the final answer, or untick "Save this answer".';return}
+    k.status='resolved';k.solvedAt=Date.now();if(!k.firstResponse)k.firstResponse=Date.now();k.messages.push({from:'staff',name:S.user.name,text:'Marked as resolved.'+(ans?' '+ans.split('\n')[0]:''),ts:Date.now()});
+    if(save){D().archive.unshift({id:'a'+Date.now(),cat:k.cat,dept:k.dept,title:k.title,answer:ans.split('\n').map(function(s){return s.trim()}).filter(Boolean),by:S.user.name,ts:Date.now(),helpful:0})}
+    keep(render);toast(save?'Solved and saved to the archive':'Complaint marked resolved')},
+  reopen:function(d){var k=tk(d.id);k.status='inprogress';k.solvedAt=null;k.messages.push({from:'student',name:S.user.name,text:'Reopened: the problem is still happening.',ts:Date.now()});keep(render);toast('Complaint reopened')},
+  helpful:function(d){if(S.ui.helped[d.id])return;S.ui.helped[d.id]=true;D().archive.filter(function(a){return a.id===d.id})[0].helpful++;keep(render);toast('Thanks. That helps the next student too')},
+  solvedme:function(d){D().archive.filter(function(a){return a.id===d.id})[0].helpful++;S.ui.draft.ntitle='';S.ui.draft.nbody='';toast('Great, no complaint needed');go('archive')}
+};
+function tk(id){return D().complaints.filter(function(t){return t.id===id})[0]}
+/* keep scroll position across re-render */
+function keep(fn){var y=window.scrollY,open=document.activeElement&&document.activeElement.id;fn();window.scrollTo(0,y)}
+
+var CH={
+  ffac:function(d,v){S.ui.ffac=v;keep(render)},
+  dfac:function(d,v){S.ui.dfac=v;keep(render)},
+  assign:function(d,v){var k=tk(d.id);k.assignee=v;keep(render);toast('Assigned to '+v)}, complaintstatus:function(d,v){var k=tk(d.id);k.status=v;if(v==='resolved'||v==='closed')k.solvedAt=Date.now();else k.solvedAt=null;keep(render);toast('Status set to '+TICKET_ST[v])}, complaintdept:function(d,v){var k=tk(d.id);k.dept=v;k.assignee=nextStaff(v);keep(render);toast('Department changed to '+DEPTS[v].n)},
+  poststatus:function(d,v){var p=D().posts.filter(function(x){return x.id===d.id})[0];p.status=v;keep(render);toast('Status set to '+ST[v])}
+};
+var L={
+  attach:function(){var n=(dr('nfile')||'').split(/[\\/]/).pop();S.ui.draft.nfile=n;$('#attname').textContent=n?'Attached: '+n:''},
+  rerender:function(){render()},
+  forum:function(){$('#flist').innerHTML=forumListHTML()},
+  archive:function(){$('#alist').innerHTML=archiveListHTML()},
+  suggest:function(){$('#sugg').innerHTML=suggestHTML()},
+  routing:function(){$('#route').innerHTML=routeHTML(dr('ncat','grades'))}
+};
+var F={
+  login:function(){
+    var role=dr('role','student'),idv=($('#lg-id').value||'').trim(),pw=($('#lg-pw').value||''),err=$('#lg-err');
+    if(idv.length<3){err.textContent='Enter your '+(role==='student'?'student':'staff')+' ID (at least 3 characters).';$('#lg-id').focus();return}
+    if(!pw){err.textContent='Enter your password. Any password works in this demo. Choose Higher access to manage the whole system.';$('#lg-pw').focus();return}
+    if(role==='student'){
+      if(idv===STUDENT.id&&dr('fac','eng')==='eng')S.user=Object.assign({role:'student'},STUDENT);
+      else{var fc=dr('fac','eng');S.user={role:'student',id:idv,name:idv===STUDENT.id?STUDENT.name:'Student '+idv,fac:fc,program:FC[fc].n+' program',level:'Year 2',advisor:DEPTS.advising.staff[0],email:'s'+idv+'@student.ntu.example.edu'}}
+    }
+    else if(role==='advisor'){var dp=dr('dept','registrar');S.user={role:'advisor',id:idv,dept:dp,name:DEPTS[dp].staff[0]}}
+    else S.user={role:'mgr',id:idv,name:MGR.name};
+    S.seen=Date.now()-48*H;S.ui.bell=false;S.ui.openComplaint=null;S.ui.ifilter='need';S.ui.draft={};go('home');toast('Signed in as '+S.user.name);
+  },
+  post:function(){var t=dr('ptitle').trim(),b=dr('pbody').trim(),e=$('#post-err');
+    if(t.length<8){e.textContent='Give the problem a title of at least 8 characters.';$('#pt').focus();return}
+    if(b.length<10){e.textContent='Add a few details so staff can act on it.';$('#pb').focus();return}
+    D().posts.unshift({id:'p'+(D().nextPost++),cat:dr('pcat','grades'),title:t,body:b,votes:0,voters:[S.user.id],status:'open',ts:Date.now(),author:'You',fac:S.user.fac||'eng',comments:[],official:null});
+    S.ui.draft.ptitle='';S.ui.draft.pbody='';S.ui.fsort='new';S.ui.fcat='';S.ui.fq='';S.ui.draft.fq='';render();toast('Posted to the forum')},
+  complaint:function(){var t=dr('ntitle').trim(),b=dr('nbody').trim(),e=$('#t-err');
+    if(t.length<6){e.textContent='Add a subject of at least 6 characters.';$('#nt').focus();return}
+    if(b.length<10){e.textContent='Add details so the advisor can help without asking again.';$('#nb').focus();return}
+    var cat=dr('ncat','grades'),d=C[cat].d,id='CD-'+(D().nextComplaint++),now=Date.now();
+    D().complaints.push({id:id,title:t,cat:cat,dept:d,fac:S.user.fac,courseName:dr('ncourseName').trim(),course:dr('ncourse').trim().toUpperCase(),priority:dr('nprio','normal'),attachment:dr('nfile'),studentId:S.user.id,studentName:S.user.name,assignee:nextStaff(d),status:'submitted',created:now,firstResponse:null,solvedAt:null,messages:[{from:'student',name:S.user.name,text:b,ts:now}]});
+    ['ntitle','nbody','ncourseName','ncourse','nfile'].forEach(function(k){S.ui.draft[k]=''});S.ui.draft.nprio='normal';S.ui.openComplaint=id;go('complaints');toast('Complaint '+id+' submitted to '+DEPTS[d].n)},
+  ann:function(){var t=dr('annt').trim(),b=dr('annb').trim(),e=$('#an-err');
+    if(t.length<6){e.textContent='Add a title of at least 6 characters.';$('#an-t').focus();return}
+    if(b.length<10){e.textContent='Add a message students can act on.';$('#an-b').focus();return}
+    D().announcements.unshift({id:'n'+Date.now(),tag:dr('anntag','General'),title:t,body:b,by:MGR.title,ts:Date.now()});S.ui.draft.annt='';S.ui.draft.annb='';render();toast('Announcement published')}
+
+};
+
+document.addEventListener('click',function(e){if(S.ui.bell&&!e.target.closest('.bellw')){S.ui.bell=false;render()}var el=e.target.closest('[data-act]');if(!el||el.disabled)return;var h=A[el.dataset.act];if(h){if(el.tagName==='A'||el.type==='submit')e.preventDefault();h(el.dataset,el)}});
+document.addEventListener('input',function(e){var el=e.target;if(!el.dataset||!el.dataset.bind)return;S.ui.draft[el.dataset.bind]=el.value;var l=el.dataset.live;if(l&&L[l])L[l]()});
+document.addEventListener('change',function(e){var el=e.target;if(el.dataset&&el.dataset.chg&&CH[el.dataset.chg])CH[el.dataset.chg](el.dataset,el.value)});
+document.addEventListener('submit',function(e){var f=e.target.closest('form[data-form]');if(!f)return;e.preventDefault();F[f.dataset.form]()});
+
+render();
+})();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+

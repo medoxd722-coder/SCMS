@@ -1,53 +1,258 @@
 {% extends 'base.html' %}
 
-{% block title %}Submit Complaint - SUT Campus Voice{% endblock %}
+{% block title %}New Complaint · SUT Campus Desk{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white p-4 border-0" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%) !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                        <i class="bi bi-pencil-square fs-4"></i>
-                    </div>
-                    <div>
-                        <h3 class="fw-bold mb-1">Submit a Complaint</h3>
-                        <p class="mb-0 text-white-50 small">Your issue will be categorized and routed to the responsible department.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card-body p-4 p-md-5">
-                <form method="POST" enctype="multipart/form-data" class="django-form">
-                    {% csrf_token %}
-
-                    <div class="mb-4">
-                        <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
-                            <i class="bi bi-info-circle me-1 text-primary"></i> Complaint Information
-                        </h5>
-                        {{ complaint_form.as_p }}
-                    </div>
-
-                    <div class="mb-4">
-                        <h5 class="fw-bold text-dark border-bottom pb-2 mb-3">
-                            <i class="bi bi-paperclip me-1 text-secondary"></i> Supporting Documents (Optional)
-                        </h5>
-                        <p class="small text-muted mb-2">Upload relevant photos, screenshots, or PDF documents to help resolve your complaint faster.</p>
-                        {{ attachment_form.as_p }}
-                    </div>
-
-                    <div class="d-flex flex-column flex-sm-row gap-2 justify-content-end border-top pt-3">
-                        <a href="{% url 'home' %}" class="btn btn-outline-secondary px-4 py-2">
-                            Cancel
-                        </a>
-                        <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
-                            <i class="bi bi-send-fill me-1"></i> Submit Complaint
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="wrap app">
+  <!-- Pagehead -->
+  <div class="pagehead">
+    <div>
+      <h1>New Complaint</h1>
+      <p>Goes straight to the right advisor. Not the wrong desk.</p>
     </div>
+  </div>
+
+  <div class="cols">
+    <!-- Complaint Submission Form -->
+    <form class="panel stack" method="POST" enctype="multipart/form-data" id="complaintForm">
+      {% csrf_token %}
+
+      {% if complaint_form.errors or attachment_form.errors %}
+        <div class="field-err" role="alert" style="color: var(--bad); font-weight: 500;">
+          Please review and complete the required fields below.
+        </div>
+      {% endif %}
+
+      <!-- Category Selection -->
+      <label class="f">
+        <span>What is it about?</span>
+        <select name="category" id="catSelect" onchange="updateRoutingPreview(this.value)">
+          <option value="Registration & grades" data-dept="Registrar" data-staff="Eng. Mona Fathy" selected>Registration &amp; grades</option>
+          <option value="Study plan & courses" data-dept="Academic Advising" data-staff="Dr. Salma Nabil">Study plan &amp; courses</option>
+          <option value="Portal, Wi-Fi & accounts" data-dept="IT Services" data-staff="Mr. Hesham Adly">Portal, Wi-Fi &amp; accounts</option>
+          <option value="Fees & payments" data-dept="Finance Office" data-staff="Mr. Adel Ragab">Fees &amp; payments</option>
+          <option value="Transport, housing & clubs" data-dept="Student Affairs" data-staff="Ms. Heba Lotfy">Transport, housing &amp; clubs</option>
+          <option value="Labs, library & facilities" data-dept="Facilities Management" data-staff="Eng. Ashraf Wahba">Labs, library &amp; facilities</option>
+        </select>
+      </label>
+
+      <!-- Dynamic Routing Banner -->
+      <div class="route" id="routingBox" aria-live="polite">
+        <span class="mono" aria-hidden="true">&rarr;</span>
+        <div>
+          <span id="routeDept">Routed to Registrar</span>
+          <small id="routeStaff">Assigned to Eng. Mona Fathy on send</small>
+        </div>
+      </div>
+
+      <!-- Subject / Title -->
+      <label class="f">
+        <span>Subject</span>
+        <input type="text" name="title" id="titleInput" placeholder="One line that names the problem" required oninput="checkSuggestedAnswers(this.value)">
+      </label>
+
+      <!-- Course & Priority Grid -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px;">
+        <label class="f">
+          <span>Priority</span>
+          <select name="priority">
+            <option value="MEDIUM" selected>Normal</option>
+            <option value="HIGH">High: time sensitive</option>
+            <option value="URGENT">Urgent: deadline within 48 hours</option>
+            <option value="LOW">Low: non-urgent inquiry</option>
+          </select>
+        </label>
+
+        <label class="f">
+          <span>Visibility</span>
+          <select name="visibility">
+            <option value="PRIVATE_TICKET" selected>Private Ticket (You &amp; Staff only)</option>
+            <option value="PUBLIC_FORUM">Public Forum (Visible to all students)</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Details / Description -->
+      <label class="f">
+        <span>Details</span>
+        <textarea name="description" id="descInput" placeholder="Dates, course codes, receipt numbers, anything that helps the advisor solve it quickly..." required oninput="checkSuggestedAnswers(this.value)"></textarea>
+      </label>
+
+      <!-- File Attachment Upload -->
+      <label class="f">
+        <span>Attachment <small>Receipt, screenshot, or official letter. Optional</small></span>
+        <input type="file" name="file" id="fileInput" onchange="showAttachedFileName(this)">
+      </label>
+      <div class="fileline" id="fileLine" style="display: none;"></div>
+
+      <!-- Dynamic Solved Answer Suggestion Box -->
+      <div id="suggestionBox" class="sugg" style="display: none;">
+        <h3>These solved answers may fix it without a complaint:</h3>
+        <article id="suggContent">
+          <!-- Dynamic Content Populated via JS -->
+        </article>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <button class="btn primary" type="submit">Submit complaint</button>
+        <a class="btn ghost" href="{% url 'home' %}">Cancel</a>
+      </div>
+    </form>
+
+    <!-- Sidebar with Submitter Meta & What Happens Next -->
+    <aside class="side">
+      <div class="panel">
+        <h2>Sent with your complaint</h2>
+        <div class="stack">
+          <p>
+            <span class="muted">Student</span><br>
+            {% if user.is_authenticated %}
+              <b>{{ user.get_full_name|default:user.username }}</b> · ID {{ user.university_id|default:"SUT-Student" }}
+            {% else %}
+              <b>Student Credentials</b>
+            {% endif %}
+          </p>
+          <p>
+            <span class="muted">Faculty &amp; Department</span><br>
+            {% if user.is_authenticated and user.department %}
+              <b>Faculty of {{ user.department.name }}</b>
+            {% else %}
+              <b>General Student Services</b>
+            {% endif %}
+          </p>
+          <p>
+            <span class="muted">Email</span><br>
+            {% if user.is_authenticated %}
+              <b>{{ user.email|default:"student@sut.example.edu" }}</b>
+            {% else %}
+              <b>guest@student.sut.example.edu</b>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>What happens next</h2>
+        <div class="stack">
+          <p>
+            <b>1. Routed.</b><br>
+            <span class="muted">Your complaint is analyzed and routed directly to the designated department advisor.</span>
+          </p>
+          <p>
+            <b>2. Tracked.</b><br>
+            <span class="muted">Follow real-time status across 6 stages: Submitted, Under review, Assigned, In progress, Resolved, or Closed.</span>
+          </p>
+          <p>
+            <b>3. Saved.</b><br>
+            <span class="muted">Once resolved, verified answers can be saved to the searchable archive to help future students.</span>
+          </p>
+        </div>
+      </div>
+    </aside>
+  </div>
 </div>
+
+<script>
+  function updateRoutingPreview(cat) {
+    var select = document.getElementById('catSelect');
+    var opt = select.options[select.selectedIndex];
+    var dept = opt.getAttribute('data-dept') || 'Registrar';
+    var staff = opt.getAttribute('data-staff') || 'Assigned Staff';
+
+    document.getElementById('routeDept').textContent = 'Routed to ' + dept;
+    document.getElementById('routeStaff').textContent = 'Assigned to ' + staff + ' on send';
+  }
+
+  function showAttachedFileName(input) {
+    var fl = document.getElementById('fileLine');
+    if (input.files && input.files[0]) {
+      fl.style.display = 'block';
+      fl.textContent = 'Attached file: ' + input.files[0].name + ' (' + Math.round(input.files[0].size / 1024) + ' KB)';
+    } else {
+      fl.style.display = 'none';
+      fl.textContent = '';
+    }
+  }
+
+  // Pre-loaded verified archive solutions to suggest instant fixes
+  var ARCHIVE_KNOWLEDGE = [
+    {
+      keywords: ['wifi', 'wi-fi', 'internet', 'disconnect', 'network'],
+      title: 'Wi-Fi asks for login or disconnects in lecture halls',
+      steps: [
+        'Forget the "SUT-Student" network in your device Wi-Fi settings.',
+        'Turn off "Randomized MAC Address" (Private Wi-Fi Address) for SUT-Student.',
+        'Sign in once using your University ID and password.',
+        'If problem persists, check that you do not have an active VPN.'
+      ]
+    },
+    {
+      keywords: ['password', 'login', 'reset', 'portal', 'account', 'locked'],
+      title: 'Cannot log in to student portal after password change',
+      steps: [
+        'Wait 15 minutes after resetting for directory synchronization.',
+        'Sign in with your University ID number, not your personal email.',
+        'Clear browser cache & cookies or use an Incognito / Private window.'
+      ]
+    },
+    {
+      keywords: ['receipt', 'fee', 'fees', 'installment', 'payment', 'bank'],
+      title: 'Installment shows unpaid after bank deposit',
+      steps: [
+        'Bank confirmations sync daily at 6:00 AM and 6:00 PM.',
+        'Keep your physical bank receipt with transaction reference number.',
+        'If still unpaid after 24 hours, attach receipt to this complaint.'
+      ]
+    },
+    {
+      keywords: ['grade', 'appeal', 'incomplete', 'exam', 'mark', 'midterm'],
+      title: 'Grade shows "I" (Incomplete) or missing after finals',
+      steps: [
+        'An "I" mark indicates the instructor has not finalized the grade roster.',
+        'Email the course coordinator with your section number within 5 working days.'
+      ]
+    }
+  ];
+
+  function checkSuggestedAnswers(text) {
+    var query = (document.getElementById('titleInput').value + ' ' + document.getElementById('descInput').value).toLowerCase();
+    var box = document.getElementById('suggestionBox');
+    var content = document.getElementById('suggContent');
+
+    if (query.trim().length < 4) {
+      box.style.display = 'none';
+      return;
+    }
+
+    var match = null;
+    for (var i = 0; i < ARCHIVE_KNOWLEDGE.length; i++) {
+      for (var k = 0; k < ARCHIVE_KNOWLEDGE[i].keywords.length; k++) {
+        if (query.indexOf(ARCHIVE_KNOWLEDGE[i].keywords[k]) > -1) {
+          match = ARCHIVE_KNOWLEDGE[i];
+          break;
+        }
+      }
+      if (match) break;
+    }
+
+    if (match) {
+      var html = '<b>' + match.title + '</b><ol style="margin: 6px 0 0; padding-left: 20px; font-size: 13px; line-height: 1.6;">';
+      for (var s = 0; s < match.steps.length; s++) {
+        html += '<li>' + match.steps[s] + '</li>';
+      }
+      html += '</ol><div style="margin-top: 10px;"><button type="button" class="btn sm primary" onclick="acceptSolution()">This fixed my problem (No complaint needed)</button></div>';
+      content.innerHTML = html;
+      box.style.display = 'grid';
+    } else {
+      box.style.display = 'none';
+    }
+  }
+
+  function acceptSolution() {
+    showToast('Glad we could help you fix it instantly!');
+    setTimeout(function() {
+      window.location.href = "{% url 'archive' %}";
+    }, 1000);
+  }
+</script>
 {% endblock %}

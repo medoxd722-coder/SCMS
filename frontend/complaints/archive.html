@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+
+{% block title %}Complaint Answers Archive · SUT Campus Desk{% endblock %}
+
+{% block content %}
+<div class="wrap app">
+  <!-- Pagehead -->
+  <div class="pagehead">
+    <div>
+      <h1>Complaint answers archive</h1>
+      <p>Every solved problem, searchable. Find your exact issue and fix it in seconds.</p>
+    </div>
+    {% if user.is_authenticated and user.role == 'STUDENT' %}
+      <a class="btn primary" href="{% url 'submit_complaint' %}">Make a complaint</a>
+    {% endif %}
+  </div>
+
+  <!-- Search Toolbar -->
+  <div class="toolbar">
+    <input class="grow" type="search" id="archiveSearch" placeholder="Search, for example: password, receipt, prerequisite, wifi..." aria-label="Search solved problems" oninput="filterArchive()">
+  </div>
+
+  <!-- Department Filter Pills -->
+  {% if departments %}
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+      <span class="muted" style="font-size: 13px; font-weight: 600;">Department:</span>
+      <a class="chip {% if not selected_dept %}active{% endif %}" href="{% url 'archive' %}" style="text-decoration: none;">All Departments</a>
+      {% for d in departments %}
+        <a class="chip {% if selected_dept == d.code %}active{% endif %}" href="{% url 'archive' %}?dept={{ d.code }}" style="text-decoration: none;">
+          {{ d.name }} ({{ d.code }})
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Category Filter Pills -->
+  <div class="pills" style="margin-bottom: 20px;">
+    <button class="active arc-pill" onclick="filterArcCat('', this)">All</button>
+    <button class="arc-pill" onclick="filterArcCat('grades', this)">Registration &amp; grades</button>
+    <button class="arc-pill" onclick="filterArcCat('study', this)">Study plan &amp; courses</button>
+    <button class="arc-pill" onclick="filterArcCat('it', this)">Portal, Wi-Fi &amp; accounts</button>
+    <button class="arc-pill" onclick="filterArcCat('fees', this)">Fees &amp; payments</button>
+    <button class="arc-pill" onclick="filterArcCat('life', this)">Transport &amp; housing</button>
+    <button class="arc-pill" onclick="filterArcCat('campus', this)">Facilities &amp; labs</button>
+  </div>
+
+  <!-- Accordion List of Verified Solved Answers -->
+  <div class="stack" id="archiveContainer" style="max-width: 880px;">
+    {% if archive_items %}
+      {% for item in archive_items %}
+        <details class="ans arc-item" data-cat="{{ item.category|lower }}">
+          <summary>
+            <div class="row">
+              <span class="chip">{{ item.category|default:"General" }}</span>
+              <span>{{ item.department.name|default:"SUT Desk" }}</span>
+              <span>&bull;</span>
+              <span>Solved {{ item.updated_at|date:"M d, Y" }}</span>
+            </div>
+            <h3>{{ item.title }}</h3>
+            <span class="muted" style="font-size: 13px;">Verified resolution by university department</span>
+          </summary>
+          <div class="in">
+            <div style="line-height: 1.6; white-space: pre-wrap;">
+              {{ item.description }}
+            </div>
+            {% with resp=item.responses.last %}
+              {% if resp %}
+                <div style="background: var(--surface-2); padding: 12px; border-radius: 8px; margin-top: 8px;">
+                  <b>Official Solution:</b>
+                  <p style="margin-top: 4px; white-space: pre-wrap;">{{ resp.message }}</p>
+                </div>
+              {% endif %}
+            {% endwith %}
+            <div class="row" style="margin-top: 8px;">
+              <span>Answer verified by {% if item.assigned_staff %}{% if item.assigned_staff.get_full_name %}{{ item.assigned_staff.get_full_name }}{% else %}{{ item.assigned_staff.username }}{% endif %}{% else %}Department Staff{% endif %}</span>
+              <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+            </div>
+          </div>
+        </details>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Built-in Reference Knowledge Base Answers from SUT Portal -->
+    <details class="ans arc-item" data-cat="grades">
+      <summary>
+        <div class="row">
+          <span class="chip">Registration &amp; grades</span>
+          <span>Registrar</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Grade shows "I" (incomplete) after the final exam</h3>
+        <span class="muted" style="font-size: 13px;">41 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Check the grade sheet notes in the portal. An "I" means the instructor has not submitted a final mark.</li>
+          <li>Email your course instructor and copy the course coordinator within 5 working days.</li>
+          <li>If the mark is not updated after 7 days, open a complaint under Registration &amp; grades with the course code.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Eng. Mona Fathy (Registrar)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="study">
+      <summary>
+        <div class="row">
+          <span class="chip">Study plan &amp; courses</span>
+          <span>Academic Advising</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>How to drop a course after the add/drop deadline</h3>
+        <span class="muted" style="font-size: 13px;">67 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Late drops need advisor approval and a valid documentary reason.</li>
+          <li>Open a complaint under Study plan &amp; courses and attach supporting documents.</li>
+          <li>Your advisor reviews and forwards the request to the Dean. You receive a decision in 3 to 5 working days.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Dr. Salma Nabil (Academic Advising)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="it">
+      <summary>
+        <div class="row">
+          <span class="chip">Portal, Wi-Fi &amp; accounts</span>
+          <span>IT Services</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Cannot log in to the portal after a password reset</h3>
+        <span class="muted" style="font-size: 13px;">122 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Wait 15 minutes after the reset for directory synchronization.</li>
+          <li>Sign in with your student ID number, not your personal email address.</li>
+          <li>Clear browser cookies and try an incognito / private window.</li>
+          <li>Still blocked? Open an IT complaint with a screenshot of the error.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Ms. Nour Gamal (IT Services)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="fees">
+      <summary>
+        <div class="row">
+          <span class="chip">Fees &amp; payments</span>
+          <span>Finance Office</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Installment shows unpaid after a bank transfer</h3>
+        <span class="muted" style="font-size: 13px;">58 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Keep the official bank deposit receipt with the transaction reference number.</li>
+          <li>Wait 24 hours for the automated bank reconciliation sync.</li>
+          <li>If it still shows unpaid, open a Fees &amp; payments complaint and attach the receipt image.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Mr. Adel Ragab (Finance Office)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="it">
+      <summary>
+        <div class="row">
+          <span class="chip">Portal, Wi-Fi &amp; accounts</span>
+          <span>IT Services</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Wi-Fi asks for login every few minutes across campus</h3>
+        <span class="muted" style="font-size: 13px;">94 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Forget the "SUT-Student" Wi-Fi network and reconnect.</li>
+          <li>Turn off "Random MAC address" (Private Address) for this network in your phone or laptop settings.</li>
+          <li>If disconnections continue in specific halls, open an IT complaint with your room number.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Mr. Hesham Adly (IT Services)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="grades">
+      <summary>
+        <div class="row">
+          <span class="chip">Registration &amp; grades</span>
+          <span>Registrar</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Official transcript: how long and how much</h3>
+        <span class="muted" style="font-size: 13px;">83 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Request the official transcript in the portal under Documents.</li>
+          <li>Pay the administrative fee at the Finance Office or via online portal.</li>
+          <li>Pickup takes 3 working days from Student Affairs. Sealed copies for external universities take 5 working days.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Mr. Karim Saad (Registrar)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="study">
+      <summary>
+        <div class="row">
+          <span class="chip">Study plan &amp; courses</span>
+          <span>Academic Advising</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>A prerequisite blocks me from registering for an advanced course</h3>
+        <span class="muted" style="font-size: 13px;">39 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Check your study plan matrix to confirm which prerequisite is missing.</li>
+          <li>If you passed an equivalent transfer course, ask your advisor for a prerequisite waiver form.</li>
+          <li>The waiver is applied directly in your registration portal upon approval.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Dr. Tarek Younes (Academic Advising)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+
+    <details class="ans arc-item" data-cat="campus">
+      <summary>
+        <div class="row">
+          <span class="chip">Labs, library &amp; facilities</span>
+          <span>Facilities</span>
+          <span>&bull;</span>
+          <span>Solved</span>
+        </div>
+        <h3>Lab access card does not open the electronic lab doors</h3>
+        <span class="muted" style="font-size: 13px;">27 students fixed this themselves</span>
+      </summary>
+      <div class="in">
+        <ol>
+          <li>Hold the card steadily against the reader for two full seconds.</li>
+          <li>Ask the lab technician to check your name on the authorized enrolled roster.</li>
+          <li>If missing from the list, open a Facilities complaint with your course and lab code.</li>
+        </ol>
+        <div class="row">
+          <span>Answer by Ms. Reem Salah (Facilities)</span>
+          <button class="btn sm primary" type="button" onclick="markHelpful(this)">This fixed my problem</button>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<script>
+  var currentArcCat = '';
+
+  function filterArcCat(cat, btn) {
+    currentArcCat = cat.toLowerCase();
+    var pills = document.querySelectorAll('.arc-pill');
+    pills.forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    filterArchive();
+  }
+
+  function filterArchive() {
+    var query = (document.getElementById('archiveSearch').value || '').toLowerCase();
+    var items = document.querySelectorAll('.arc-item');
+
+    items.forEach(function(item) {
+      var cat = (item.getAttribute('data-cat') || '').toLowerCase();
+      var text = item.textContent.toLowerCase();
+
+      var matchesCat = !currentArcCat || cat.indexOf(currentArcCat) > -1;
+      var matchesQuery = !query || text.indexOf(query) > -1;
+
+      if (matchesCat && matchesQuery) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  function markHelpful(btn) {
+    btn.textContent = 'Thanks for confirming!';
+    btn.disabled = true;
+    btn.classList.remove('primary');
+    showToast('Glad this helped! Saved for other students.');
+  }
+</script>
+{% endblock %}
+

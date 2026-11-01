@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}Public Forum · SUT Campus Desk{% endblock %}
+
+{% block content %}
+<div class="wrap app">
+  <!-- Pagehead -->
+  <div class="pagehead">
+    <div>
+      <h1>Public forum</h1>
+      <p>Shared campus problems. The most upvoted rise to the top for the university to fix first.</p>
+    </div>
+    {% if user.is_authenticated and user.role == 'STUDENT' %}
+      <a class="btn primary" href="#postForm">Post a problem</a>
+    {% endif %}
+  </div>
+
+  <div class="cols">
+    <!-- Forum Stream & Feed -->
+    <div>
+      <!-- Filter Toolbar -->
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Sort">
+          <button class="active" id="sortTopBtn" onclick="sortForum('top')">Top</button>
+          <button id="sortNewBtn" onclick="sortForum('new')">Newest</button>
+        </div>
+        <input class="grow" type="search" id="forumSearch" placeholder="Search the forum..." aria-label="Search the forum" oninput="filterForumPosts()">
+      </div>
+
+      <!-- Department Filter Pills -->
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+        <span class="muted" style="font-size: 13px; font-weight: 600;">Department:</span>
+        <a class="chip {% if not selected_dept %}active{% endif %}" href="{% url 'forum' %}" style="text-decoration: none;">All Departments</a>
+        {% for d in departments %}
+          <a class="chip {% if selected_dept == d.code %}active{% endif %}" href="{% url 'forum' %}?dept={{ d.code }}" style="text-decoration: none;">
+            {{ d.name }} ({{ d.code }})
+          </a>
+        {% endfor %}
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div class="pills" style="margin-bottom: 16px;">
+        <button class="active cat-pill" onclick="filterByCat('', this)">All Categories</button>
+        <button class="cat-pill" onclick="filterByCat('Registration & grades', this)">Registration &amp; grades</button>
+        <button class="cat-pill" onclick="filterByCat('Study plan & courses', this)">Study plan &amp; courses</button>
+        <button class="cat-pill" onclick="filterByCat('Portal, Wi-Fi & accounts', this)">Portal, Wi-Fi &amp; accounts</button>
+        <button class="cat-pill" onclick="filterByCat('Fees & payments', this)">Fees &amp; payments</button>
+        <button class="cat-pill" onclick="filterByCat('Transport, housing & clubs', this)">Transport &amp; housing</button>
+        <button class="cat-pill" onclick="filterByCat('Labs, library & facilities', this)">Facilities &amp; labs</button>
+      </div>
+
+      <!-- Post List Stream -->
+      <div class="stack" id="postsContainer">
+        {% if forum_posts %}
+          {% for post in forum_posts %}
+            <article class="post forum-article"
+                     id="post-{{ post.id }}"
+                     data-cat="{{ post.category }}"
+                     data-votes="{{ post.upvotes.count }}"
+                     data-time="{{ post.created_at|date:'U' }}">
+              
+              <!-- Upvote Button with Seamless AJAX -->
+              <form method="POST" action="{% url 'upvote_complaint' post.id %}" style="display: inline;" onsubmit="handleAjaxUpvote(event, this)">
+                {% csrf_token %}
+                <button type="submit" class="vote {% if post.user_has_upvoted %}on{% endif %}"
+                        aria-label="Upvote this issue">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                  <b>{{ post.upvotes.count }}</b>
+                </button>
+              </form>
+
+              <div style="min-width: 0;">
+                <div class="meta">
+                  <span class="chip">{{ post.category|default:"Campus Life" }}</span>
+                  <span class="chip">{{ post.department.code|default:"General" }}</span>
+                  <span>{% if post.student %}{{ post.student.username }}{% else %}Anonymous{% endif %} · {{ post.created_at|date:"M d, Y" }}</span>
+                </div>
+
+                <h3 style="margin: 6px 0;">
+                  <a href="{% url 'complaint_detail' post.id %}" style="color: inherit; text-decoration: none;">
+                    {{ post.title }}
+                  </a>
+                </h3>
+
+                <p class="body">{{ post.description }}</p>
+
+                <!-- Official Staff Response If Exists -->
+                {% with official=post.responses.last %}
+                  {% if official and official.responder.role != 'STUDENT' %}
+                    <div class="official">
+                      <small>Official reply · {% if official.responder %}{{ official.responder.get_full_name|default:official.responder.username }}{% else %}Staff{% endif %} ({% if official.responder and official.responder.department %}{{ official.responder.department.code }}{% else %}Staff{% endif %}) · {{ official.created_at|date:"M d" }}</small>
+                      {{ official.message }}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+                <div class="foot">
+                  {% if post.status == 'RESOLVED' %}
+                    <span class="badge b-solved" title="Resolved! Stays on the forum for 24h before moving to the Solved Archive.">Resolved · 24h Notice</span>
+                  {% elif post.status == 'IN_PROGRESS' %}
+                    <span class="badge b-inprogress">In progress</span>
+                  {% elif post.responses.exists %}
+                    <span class="badge b-replied">Official reply</span>
+                  {% else %}
+                    <span class="badge b-open">Open</span>
+                  {% endif %}
+
+                  <button class="linkbtn" type="button" onclick="toggleComments('thread-{{ post.id }}')">
+                    {{ post.responses.count }} comment{{ post.responses.count|pluralize }}
+                  </button>
+                </div>
+
+                <!-- Expandable Comments Thread -->
+                <div class="thread" id="thread-{{ post.id }}" style="display: none;">
+                  {% if post.responses.exists %}
+                    {% for c in post.responses.all %}
+                      <div class="cm {% if c.responder and c.responder.role != 'STUDENT' %}staff{% endif %}">
+                        <small>{% if c.responder %}{{ c.responder.username }}{% else %}Staff{% endif %}{% if c.responder and c.responder.role != 'STUDENT' %} · Staff{% endif %} · {{ c.created_at|date:"M d, H:i" }}</small>
+                        {{ c.message }}
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <p class="muted" style="font-size: 13px;">No comments yet on this problem.</p>
+                  {% endif %}
+
+                  {% if user.is_authenticated %}
+                    <form method="POST" action="{% url 'complaint_detail' post.id %}" class="inline" style="margin-top: 6px;">
+                      {% csrf_token %}
+                      <input type="text" name="message" placeholder="Add a comment or share your experience..." required>
+                      <button class="btn sm primary" type="submit">Comment</button>
+                    </form>
+                  {% else %}
+                    <p class="muted" style="font-size: 13px;"><a href="{% url 'login' %}">Sign in</a> to leave a comment.</p>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        {% else %}
+          <div class="empty">
+            <b>No forum issues found</b>
+            Be the first to post a campus problem or inquiry.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Sidebar: Post a problem & Guidelines -->
+    <aside class="side">
+      {% if user.is_authenticated and user.role == 'STUDENT' %}
+        <form class="panel stack" id="postForm" method="POST" action="{% url 'submit_complaint' %}">
+          {% csrf_token %}
+          <input type="hidden" name="visibility" value="PUBLIC_FORUM">
+          <h2>Post a problem</h2>
+          <p class="muted" style="font-size: 13px; margin-top: -6px;">
+            Use this for issues many students share. For private individual concerns,
+            <a href="{% url 'submit_complaint' %}" class="linkbtn">make a private complaint</a>.
+          </p>
+
+          <label class="f">
+            <span>Category</span>
+            <select name="category" required>
+              <option value="Registration & grades">Registration &amp; grades</option>
+              <option value="Study plan & courses">Study plan &amp; courses</option>
+              <option value="Portal, Wi-Fi & accounts">Portal, Wi-Fi &amp; accounts</option>
+              <option value="Fees & payments">Fees &amp; payments</option>
+              <option value="Transport, housing & clubs">Transport, housing &amp; clubs</option>
+              <option value="Labs, library & facilities">Labs, library &amp; facilities</option>
+            </select>
+          </label>
+
+          <label class="f">
+            <span>Title</span>
+            <input type="text" name="title" placeholder="What is the problem?" required>
+          </label>
+
+          <label class="f">
+            <span>Details</span>
+            <textarea name="description" placeholder="Where, when, and how many students are affected..." required></textarea>
+          </label>
+
+          <button class="btn primary" type="submit">Post to forum</button>
+        </form>
+      {% elif user.is_authenticated %}
+        <div class="panel">
+          <h2>Staff overview</h2>
+          <p class="muted" style="font-size: 13px;">
+            Open any forum post to publish an official department response and adjust resolution status. Students who upvoted will be notified.
+          </p>
+        </div>
+      {% else %}
+        <div class="panel">
+          <h2>Student Voice</h2>
+          <p class="muted" style="font-size: 13px;">
+            Sign in with your student ID to upvote issues that affect you and post your own problems to the community.
+          </p>
+          <div style="margin-top: 12px;">
+            <a class="btn primary sm" href="{% url 'login' %}">Sign in to participate</a>
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="panel">
+        <h2>Before you post</h2>
+        <p class="muted" style="font-size: 13px;">
+          Search the <a href="{% url 'archive' %}" class="linkbtn">solved archive</a> first. Many common student problems already have official step-by-step answers.
+        </p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+  function toggleComments(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = el.style.display === 'none' ? 'grid' : 'none';
+  }
+
+  var currentCat = '';
+  var currentSort = 'top';
+
+  function filterByCat(cat, btn) {
+    currentCat = cat;
+    var pills = document.querySelectorAll('.cat-pill');
+    pills.forEach(function(p) { p.classList.remove('active'); });
+    btn.classList.add('active');
+    filterForumPosts();
+  }
+
+  function sortForum(mode) {
+    currentSort = mode;
+    document.getElementById('sortTopBtn').classList.toggle('active', mode === 'top');
+    document.getElementById('sortNewBtn').classList.toggle('active', mode === 'new');
+
+    var container = document.getElementById('postsContainer');
+    var articles = Array.from(container.querySelectorAll('.forum-article'));
+
+    articles.sort(function(a, b) {
+      if (mode === 'top') {
+        return parseInt(b.getAttribute('data-votes') || 0) - parseInt(a.getAttribute('data-votes') || 0);
+      } else {
+        return parseInt(b.getAttribute('data-time') || 0) - parseInt(a.getAttribute('data-time') || 0);
+      }
+    });
+
+    articles.forEach(function(art) { container.appendChild(art); });
+  }
+
+  function filterForumPosts() {
+    var query = (document.getElementById('forumSearch').value || '').toLowerCase();
+    var articles = document.querySelectorAll('.forum-article');
+
+    articles.forEach(function(art) {
+      var cat = art.getAttribute('data-cat') || '';
+      var text = art.textContent.toLowerCase();
+      var matchesCat = !currentCat || cat.indexOf(currentCat) > -1;
+      var matchesQuery = !query || text.indexOf(query) > -1;
+
+      if (matchesCat && matchesQuery) {
+        art.style.display = 'grid';
+      } else {
+        art.style.display = 'none';
+      }
+    });
+  }
+</script>
+{% endblock %}
+

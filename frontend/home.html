@@ -1,194 +1,733 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Dashboard - SUT Campus Voice{% endblock %}
+{% block title %}
+  {% if user.is_authenticated %}
+    Dashboard · SUT Campus Desk
+  {% else %}
+    SUT Campus Desk · Take the line off the hallway floor
+  {% endif %}
+{% endblock %}
 
 {% block content %}
-<!-- Welcome Header -->
-<div class="card shadow-sm border-0 mb-4 bg-primary text-white" style="background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%) !important;">
-    <div class="card-body p-4 p-md-5">
-        <div class="row align-items-center">
-            <div class="col-lg-8">
-                <span class="badge bg-warning text-dark fw-bold px-3 py-2 mb-2">Smart University SCMS</span>
-                <h1 class="display-6 fw-bold mb-2">Welcome to SUT Campus Voice</h1>
-                <p class="lead mb-3 text-white-50">
-                    A transparent, AI-assisted platform for El Sewedy University of Technology students &amp; staff to report issues, track resolutions, and foster continuous improvement.
-                </p>
-                {% if user.is_authenticated %}
-                    <div class="d-flex flex-wrap gap-2 align-items-center">
-                        <span class="badge bg-white text-dark py-2 px-3">
-                            <i class="bi bi-person-circle me-1 text-primary"></i> {{ user.username }} ({{ user.get_role_display }})
-                        </span>
-                        {% if user.department %}
-                            <span class="badge bg-white text-dark py-2 px-3">
-                                <i class="bi bi-building me-1 text-secondary"></i> {{ user.department.code }}
-                            </span>
-                        {% endif %}
-                    </div>
-                {% else %}
-                    <div class="d-flex gap-2">
-                        <a href="{% url 'login' %}" class="btn btn-warning fw-semibold px-4">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
-                        </a>
-                        <a href="{% url 'register' %}" class="btn btn-outline-light fw-semibold px-4">
-                            Register
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-            <div class="col-lg-4 text-lg-end mt-4 mt-lg-0">
-                {% if user.is_authenticated %}
-                    <a href="{% url 'submit_complaint' %}" class="btn btn-warning btn-lg fw-bold px-4 py-3 shadow">
-                        <i class="bi bi-plus-circle me-2"></i> Submit Complaint
-                    </a>
-                {% endif %}
-            </div>
+{% if not user.is_authenticated %}
+  <!-- =========================================================================
+       PUBLIC LANDING PAGE (VISITOR VIEW)
+       ========================================================================= -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Take the line off the hallway floor.</h1>
+        <p class="lead">
+          One place in the SUT portal for every student complaint. Vote on problems everyone shares, make a complaint to the right advisor, and search answers that are already solved.
+        </p>
+        <div class="cta-row">
+          <a class="btn primary" href="{% url 'login' %}">Sign in with student ID</a>
+          <a class="btn" href="#how">See how it works</a>
         </div>
-    </div>
-</div>
+      </div>
 
-<!-- Bootstrap Grid: Top Public Issues (Left) & My Private Tickets (Right) -->
-<div class="row g-4">
-    <!-- Left Column: Top Public Issues -->
-    <div class="col-md-6">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-megaphone text-primary"></i> Top Public Issues
-            </h4>
-            <span class="badge bg-primary rounded-pill">{{ public_complaints|length }}</span>
+      <div class="live">
+        <div class="stub" style="--cut:62%" aria-hidden="true">
+          <div>
+            <small>Now serving</small>
+            <span class="n">CD-2041</span>
+          </div>
+          <div class="side">Registrar<br>In progress</div>
         </div>
+
+        <h2>Most upvoted this week</h2>
+        <p class="muted" style="font-size: 13px; margin-bottom: 6px;">
+          The most upvoted problems jump to the top for the university to fix first.
+        </p>
 
         {% if public_complaints %}
-            <div class="d-flex flex-direction-column flex-column gap-3">
-                {% for complaint in public_complaints %}
-                    <div class="card shadow-sm border-0">
-                        <div class="card-body p-3">
-                            <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div class="d-flex flex-wrap gap-1">
-                                    <span class="badge bg-secondary">{{ complaint.category|default:"General" }}</span>
-                                    {% if complaint.status == 'RESOLVED' %}
-                                        <span class="badge bg-success">Resolved</span>
-                                    {% elif complaint.status == 'IN_PROGRESS' %}
-                                        <span class="badge bg-warning text-dark">In Progress</span>
-                                    {% elif complaint.status == 'REJECTED' %}
-                                        <span class="badge bg-danger">Rejected</span>
-                                    {% else %}
-                                        <span class="badge bg-info text-dark">Pending</span>
-                                    {% endif %}
-                                </div>
-                                <span class="badge bg-light text-dark border">
-                                    <i class="bi bi-flag-fill me-1 text-danger"></i>{{ complaint.get_priority_display }}
-                                </span>
-                            </div>
-
-                            <h5 class="card-title fw-bold mb-1">
-                                <a href="{% url 'complaint_detail' complaint.id %}" class="text-dark text-decoration-none">
-                                    #{{ complaint.id }} {{ complaint.title }}
-                                </a>
-                            </h5>
-
-                            <p class="card-text text-muted small mb-3">
-                                {{ complaint.description|truncatewords:22 }}
-                            </p>
-
-                            <div class="d-flex justify-content-between align-items-center text-muted small border-top pt-2">
-                                <span>
-                                    <i class="bi bi-building me-1"></i>{{ complaint.department.code|default:"General" }}
-                                    &bull; <i class="bi bi-clock me-1"></i>{{ complaint.created_at|date:"M d, Y" }}
-                                </span>
-                                <a href="{% url 'complaint_detail' complaint.id %}" class="btn btn-sm btn-outline-primary">
-                                    View Details &rarr;
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+          {% for complaint in public_complaints|slice:":3" %}
+            <div class="live-row">
+              <button type="button" class="vote {% if complaint.id in user_upvotes %}on{% endif %}" onclick="toggleUpvote(event, {{ complaint.id }}, this)" aria-label="Upvote">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                <b>{{ complaint.upvotes.count }}</b>
+              </button>
+              <div>
+                <p><a href="{% url 'complaint_detail' complaint.id %}" style="color: inherit; text-decoration: none;"><b>{{ complaint.title }}</b></a></p>
+                <small>{{ complaint.category|default:"Campus Life" }} · {{ complaint.department.code|default:"General" }}</small>
+              </div>
             </div>
+          {% endfor %}
         {% else %}
-            <div class="card shadow-sm border-0 text-center p-4">
-                <div class="text-muted mb-2"><i class="bi bi-chat-square-text fs-1"></i></div>
-                <p class="text-muted mb-0">No public issues reported yet.</p>
+          <div class="live-row">
+            <span class="vote">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+              <b>412</b>
+            </span>
+            <div>
+              <p>Registrar lines start at 7 AM and desk cannot handle grade appeals</p>
+              <small>Registration &amp; grades · Under review</small>
             </div>
+          </div>
+          <div class="live-row">
+            <span class="vote">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+              <b>287</b>
+            </span>
+            <div>
+              <p>Wi-Fi in Building C drops during lectures</p>
+              <small>IT Services · Official reply</small>
+            </div>
+          </div>
+          <div class="live-row">
+            <span class="vote">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 19V5M5 12l7-7 7 7"/>
+              </svg>
+              <b>198</b>
+            </span>
+            <div>
+              <p>Not enough library seats during finals week</p>
+              <small>Facilities · Open</small>
+            </div>
+          </div>
         {% endif %}
+      </div>
     </div>
+  </section>
 
-    <!-- Right Column: My Private Tickets -->
-    <div class="col-md-6">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-shield-lock text-secondary"></i> My Private Tickets
-            </h4>
-            {% if user.is_authenticated %}
-                <span class="badge bg-secondary rounded-pill">{{ my_private_complaints|length }}</span>
-            {% endif %}
+  <!-- Problem Section -->
+  <section class="sec alt" id="problem">
+    <div class="wrap split">
+      <div>
+        <h2 class="t">Students have problems, but nowhere to take them.</h2>
+        <p class="sub">Everything right now is messy, slow, and unorganized.</p>
+      </div>
+      <div class="problems">
+        <div>
+          <span class="pnum">01</span>
+          <div>
+            <h3>Huge lines at the Registrar</h3>
+            <p>Students stand in busy lines for hours just to find out the Registrar desk cannot even help them with their issue.</p>
+          </div>
+        </div>
+        <div>
+          <span class="pnum">02</span>
+          <div>
+            <h3>Nobody knows who to ask</h3>
+            <p>Students bounce from office to office between advisors, departments, and IT with zero clear direction.</p>
+          </div>
+        </div>
+        <div>
+          <span class="pnum">03</span>
+          <div>
+            <h3>Same questions every day</h3>
+            <p>Staff waste hours answering the exact same complaints over and over because solved answers are not saved anywhere.</p>
+          </div>
+        </div>
+        <div>
+          <span class="pnum">04</span>
+          <div>
+            <h3>Big issues get ignored</h3>
+            <p>When 500 students face the same problem, the university does not see how big it is until everyone complains in person.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="sec" id="how">
+    <div class="wrap">
+      <h2 class="t">Log in once. Then pick the path that fits your problem.</h2>
+      <p class="sub">Students sign in with their university ID. Every route ends in an answer that is saved for the next student.</p>
+      <div class="flow">
+        <div>
+          <span class="ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </span>
+          <h3>Public forum</h3>
+          <p>Post general campus issues and upvote the ones that affect you. The most upvoted problems rise to the top for the university to fix first.</p>
+        </div>
+        <div>
+          <span class="ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="4" y="11" width="16" height="10" rx="2"/>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+            </svg>
+          </span>
+          <h3>Make a complaint</h3>
+          <p>For personal issues like grades or registration. Your complaint goes straight to the right advisor, not the wrong desk, with live status.</p>
+        </div>
+        <div>
+          <span class="ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M21 21l-4.3-4.3"/>
+            </svg>
+          </span>
+          <h3>Solved archive</h3>
+          <p>Resolved complaints are saved in a searchable archive. Students can find verified step-by-step answers to common problems.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Access Levels Section -->
+  <section class="sec alt" id="access">
+    <div class="wrap">
+      <h2 class="t">Access levels</h2>
+      <div class="roles">
+        <div>
+          <span class="lvl">STUDENT</span>
+          <h3>Student</h3>
+          <p class="muted">Search solved problems, post and upvote on the forum, or make a personal complaint.</p>
+          <ul>
+            <li>Public forum with upvotes</li>
+            <li>Complaints with live 6-stage tracker</li>
+            <li>Searchable solved archive</li>
+          </ul>
+        </div>
+        <div>
+          <span class="lvl">ADVISOR</span>
+          <h3>Advisor</h3>
+          <p class="muted">Reply to students, solve department complaints, and save answers to the database.</p>
+          <ul>
+            <li>Department complaint inbox</li>
+            <li>Official replies on the forum</li>
+            <li>Solve and save to archive</li>
+          </ul>
+        </div>
+        <div>
+          <span class="lvl">HIGHER ACCESS</span>
+          <h3>Higher access</h3>
+          <p class="muted">Manage complaints across the university, assign departments and staff, update statuses, publish announcements, and review performance.</p>
+          <ul>
+            <li>Manage complaints from every department</li>
+            <li>Assign complaints to staff</li>
+            <li>University-wide performance reports</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table & Rollout Steps -->
+  <section class="sec" id="why">
+    <div class="wrap">
+      <h2 class="t">Why this beats what students use today.</h2>
+      <div class="tablebox">
+        <table>
+          <thead>
+            <tr>
+              <th>Other options</th>
+              <th>Why they fail</th>
+              <th>What we offer instead</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Registrar desk and emails</b></td>
+              <td>Long physical lines, lost emails, and nobody knows who handles what.</td>
+              <td class="win">Instant routing to the right advisor plus live complaint status.</td>
+            </tr>
+            <tr>
+              <td><b>WhatsApp and Facebook groups</b></td>
+              <td>Messy, unofficial, full of rumors, and university staff are not there.</td>
+              <td class="win">An official university forum where upvotes bring real staff replies.</td>
+            </tr>
+            <tr>
+              <td><b>Big corporate tools (Zendesk)</b></td>
+              <td>Costs thousands of dollars a month and is not built for students.</td>
+              <td class="win">Built specifically for SUT students &amp; staff at zero per-user license cost.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 class="t" style="margin-top: 64px;">How this becomes a real success, not a side project.</h2>
+      <div class="steps">
+        <div>
+          <span class="mono">STEP 01 · Real adoption</span>
+          <h3>Plugged into the uni website</h3>
+          <p>It lives directly on the official SUT university website using student ID login.</p>
+        </div>
+        <div>
+          <span class="mono">STEP 02 · Less work for staff</span>
+          <h3>Empty the Registrar lines</h3>
+          <p>The solved archive stops students from asking the same questions 100 times.</p>
+        </div>
+        <div>
+          <span class="mono">STEP 03 · Smart rollout</span>
+          <h3>Start in one faculty, then expand</h3>
+          <p>Test with real advisors in one department, prove it cuts lines, then open to the whole university.</p>
+        </div>
+        <div>
+          <span class="mono">STEP 04 · Management power</span>
+          <h3>Accountability at the top</h3>
+          <p>Management sees which problems have the most upvotes and which departments are slow.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom CTA Banner -->
+  <section class="sec" style="padding-top: 0;">
+    <div class="wrap">
+      <div class="bottom">
+        <h2>Fewer lines at the Registrar. Faster help from advisors. A memory of every solved problem.</h2>
+        <a class="btn" href="{% url 'login' %}" style="background: var(--complaint); color: var(--complaint-ink); font-weight: 700;">
+          Try Campus Desk Now
+        </a>
+      </div>
+    </div>
+  </section>
+
+{% else %}
+
+  <!-- =========================================================================
+       AUTHENTICATED DASHBOARD (ROLE-BASED HOME)
+       ========================================================================= -->
+  <div class="wrap app">
+
+    {% if user.role == 'STUDENT' %}
+      <!-- ---------------- STUDENT HOME ---------------- -->
+      <section class="panel welcome">
+        <div>
+          <h1>Welcome, {{ user.first_name|default:user.username }}</h1>
+          <p class="muted" style="margin-top: 8px;">
+            Faculty of {{ user.department.name|default:"Engineering & Technology" }} · Student Portal
+          </p>
+          <div class="ctx">
+            <span class="chip">University ID: {{ user.university_id|default:"210045318" }}</span>
+            <span class="chip">{{ user.email|default:"student@sut.example.edu" }}</span>
+            <span class="chip">Status: Active</span>
+          </div>
+          <div class="cta-row">
+            <a class="btn primary" href="{% url 'submit_complaint' %}">Make a complaint</a>
+            <a class="btn" href="{% url 'forum' %}">Open the forum</a>
+            <a class="btn" href="{% url 'archive' %}">Search complaint answers</a>
+          </div>
         </div>
 
-        {% if user.is_authenticated %}
-            {% if my_private_complaints %}
-                <div class="d-flex flex-column gap-3">
-                    {% for complaint in my_private_complaints %}
-                        <div class="card shadow-sm border-0">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <div class="d-flex flex-wrap gap-1">
-                                        <span class="badge bg-secondary">{{ complaint.category|default:"Private" }}</span>
-                                        {% if complaint.status == 'RESOLVED' %}
-                                            <span class="badge bg-success">Resolved</span>
-                                        {% elif complaint.status == 'IN_PROGRESS' %}
-                                            <span class="badge bg-warning text-dark">In Progress</span>
-                                        {% elif complaint.status == 'REJECTED' %}
-                                            <span class="badge bg-danger">Rejected</span>
-                                        {% else %}
-                                            <span class="badge bg-info text-dark">Pending</span>
-                                        {% endif %}
-                                    </div>
-                                    <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ complaint.created_at|date:"M d, Y" }}</small>
-                                </div>
-
-                                <h5 class="card-title fw-bold mb-1">
-                                    <a href="{% url 'complaint_detail' complaint.id %}" class="text-dark text-decoration-none">
-                                        #{{ complaint.id }} {{ complaint.title }}
-                                    </a>
-                                </h5>
-
-                                <p class="card-text text-muted small mb-3">
-                                    {{ complaint.description|truncatewords:20 }}
-                                </p>
-
-                                <div class="d-flex justify-content-between align-items-center border-top pt-2">
-                                    <span class="small text-muted">
-                                        <i class="bi bi-shield-check me-1"></i>{{ complaint.department.name|default:"Unassigned" }}
-                                    </span>
-                                    <a href="{% url 'complaint_detail' complaint.id %}" class="btn btn-sm btn-outline-secondary">
-                                        Track Status &rarr;
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="card shadow-sm border-0 text-center p-5">
-                    <div class="text-secondary mb-2"><i class="bi bi-ticket-perforated fs-1"></i></div>
-                    <h5 class="fw-bold">No Private Tickets</h5>
-                    <p class="text-muted small mb-3">You currently have no private complaints filed under your account.</p>
-                    <div>
-                        <a href="{% url 'submit_complaint' %}" class="btn btn-sm btn-primary">
-                            <i class="bi bi-plus-lg me-1"></i> Submit a Ticket
-                        </a>
-                    </div>
-                </div>
-            {% endif %}
-        {% else %}
-            <div class="card shadow-sm border-0 text-center p-5">
-                <div class="text-primary mb-2"><i class="bi bi-lock-fill fs-1"></i></div>
-                <h5 class="fw-bold">Sign In to View Your Tickets</h5>
-                <p class="text-muted small mb-3">Access your confidential inquiries, track staff responses, and rate resolutions.</p>
-                <div class="d-flex justify-content-center gap-2">
-                    <a href="{% url 'login' %}" class="btn btn-primary btn-sm px-3">Log In</a>
-                    <a href="{% url 'register' %}" class="btn btn-outline-secondary btn-sm px-3">Register</a>
-                </div>
+        <!-- Student University ID Card Motif -->
+        <div class="idcard">
+          <div class="band">
+            <svg class="crest" width="18" height="21" viewBox="0 0 40 46" aria-hidden="true">
+              <path d="M20 2 4 8v14c0 11 7 19 16 22 9-3 16-11 16-22V8z" fill="#14264A" stroke="#FFC933" stroke-width="2"/>
+              <path d="M12 23.5c3-1.6 5.5-1.4 8 .5 2.5-1.9 5-2.1 8-.5V32c-3-1.6-5.5-1.4-8 .5-2.5-1.9-5-2.1-8-.5z" fill="none" stroke="#FFC933" stroke-width="1.6"/>
+              <path d="M20 24v8.5" stroke="#FFC933" stroke-width="1.6"/>
+              <path d="M20 10l2 4.2 4.6.6-3.3 3.2.8 4.5-4.1-2.2-4.1 2.2.8-4.5-3.3-3.2 4.6-.6z" fill="#FFC933"/>
+            </svg>
+            SUT Student Card
+          </div>
+          <div class="gold"></div>
+          <div class="bd">
+            <div class="photo" aria-hidden="true">
+              {{ user.username|slice:":2"|upper }}
             </div>
-        {% endif %}
-    </div>
-</div>
+            <div>
+              <b>{{ user.get_full_name|default:user.username }}</b>
+              <small>
+                ID {{ user.university_id|default:"210045318" }}<br>
+                {{ user.department.code|default:"ENG" }} Program<br>
+                Valid 2026/27
+              </small>
+            </div>
+          </div>
+          <div class="code" aria-hidden="true"></div>
+        </div>
+      </section>
+
+      <!-- Student 12-Column Grid -->
+      <div class="homegrid">
+        <!-- My Complaints Panel -->
+        <section class="panel hg-8">
+          <div class="head">
+            <h2>My complaints</h2>
+            <a class="linkbtn" href="{% url 'my_complaints' %}">View all ({{ my_private_complaints|length }})</a>
+          </div>
+          {% if my_private_complaints %}
+            {% for complaint in my_private_complaints|slice:":4" %}
+              <a class="item" href="{% url 'complaint_detail' complaint.id %}">
+                <div>
+                  <span class="mono muted">#CD-{{ complaint.id }}</span>
+                  {% if complaint.priority == 'URGENT' %}
+                    <span class="badge b-late">Urgent</span>
+                  {% endif %}
+                  <br>
+                  <b>{{ complaint.title }}</b>
+                  <br>
+                  <span class="muted" style="font-size: 13px;">
+                    {{ complaint.department.code|default:"General" }} · {{ complaint.created_at|date:"M d, Y" }}
+                  </span>
+                </div>
+                {% if complaint.status == 'RESOLVED' %}
+                  <span class="badge b-solved">Resolved</span>
+                {% elif complaint.status == 'IN_PROGRESS' %}
+                  <span class="badge b-inprogress">In progress</span>
+                {% elif complaint.status == 'REJECTED' %}
+                  <span class="badge b-late">Rejected</span>
+                {% else %}
+                  <span class="badge b-submitted">Submitted</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="empty">
+              <b>No open complaints</b>
+              Personal issue with grades, fees or registration? Make a complaint and it goes straight to the right advisor.
+            </div>
+          {% endif %}
+        </section>
+
+        <!-- Key Dates Panel -->
+        <section class="panel hg-4">
+          <h2>Key dates</h2>
+          <div class="date soon">
+            <div class="d">
+              <b>04</b>
+              <small>Nov</small>
+            </div>
+            <div>
+              <b>Add/drop period closes</b><br>
+              <span class="muted" style="font-size: 13px;">In 3 days</span>
+            </div>
+          </div>
+          <div class="date">
+            <div class="d">
+              <b>09</b>
+              <small>Nov</small>
+            </div>
+            <div>
+              <b>Installment 3 payment due</b><br>
+              <span class="muted" style="font-size: 13px;">In 8 days</span>
+            </div>
+          </div>
+          <div class="date">
+            <div class="d">
+              <b>18</b>
+              <small>Nov</small>
+            </div>
+            <div>
+              <b>Midterm exams begin</b><br>
+              <span class="muted" style="font-size: 13px;">In 17 days</span>
+            </div>
+          </div>
+          <div class="date">
+            <div class="d">
+              <b>24</b>
+              <small>Dec</small>
+            </div>
+            <div>
+              <b>Final exams begin</b><br>
+              <span class="muted" style="font-size: 13px;">In 53 days</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trending On Campus (Public Forum) -->
+        <section class="panel hg-8">
+          <div class="head">
+            <h2>Trending on campus</h2>
+            <a class="linkbtn" href="{% url 'forum' %}">Open forum</a>
+          </div>
+          {% if public_complaints %}
+            {% for complaint in public_complaints|slice:":4" %}
+              <a class="item" href="{% url 'complaint_detail' complaint.id %}">
+                <div>
+                  <b>{{ complaint.title }}</b><br>
+                  <span class="muted" style="font-size: 13px;">
+                    {{ complaint.category|default:"General" }} · {{ complaint.department.code|default:"Campus" }} · {{ complaint.created_at|date:"M d" }}
+                  </span>
+                </div>
+                <span class="vote" style="pointer-events: none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                  <b>{{ complaint.upvotes.count|default:1 }}</b>
+                </span>
+              </a>
+            {% endfor %}
+          {% else %}
+            <p class="muted">No forum posts yet.</p>
+          {% endif %}
+        </section>
+
+        <!-- Announcements Panel -->
+        <section class="panel hg-4">
+          <h2>Announcements</h2>
+          <div class="ann">
+            <span class="chip">Registration</span>
+            <h3>Add/drop period closes on Thursday</h3>
+            <p>Submit course changes in the portal before 3 PM. Late drops need advisor approval.</p>
+            <small class="muted">Registrar · 5 h ago</small>
+          </div>
+          <div class="ann">
+            <span class="chip">IT Services</span>
+            <h3>Portal maintenance on Friday, 2 to 4 AM</h3>
+            <p>Registration, grades, and Campus Desk will undergo scheduled maintenance.</p>
+            <small class="muted">IT Desk · 1 d ago</small>
+          </div>
+        </section>
+      </div>
+
+    {% elif user.role == 'STAFF' %}
+      <!-- ---------------- ADVISOR / STAFF HOME ---------------- -->
+      <section class="panel welcome" style="grid-template-columns: minmax(0, 1fr);">
+        <div>
+          <h1>Welcome, {{ user.first_name|default:user.username }}</h1>
+          <p class="muted" style="margin-top: 8px;">
+            Department of {{ user.department.name|default:"Assigned Department" }} ({{ user.department.code|default:"STAFF" }}) · Staff ID {{ user.university_id }}
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="{% url 'department_dashboard' %}">Open complaint inbox</a>
+            <a class="btn" href="{% url 'forum' %}">Reply on the forum</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI Metrics Row -->
+      <div class="kpis in">
+        <div class="kpi">
+          <small>Waiting for your reply</small>
+          <b>{{ my_private_complaints|length }}</b>
+          <span>target first reply 24 h</span>
+        </div>
+        <div class="kpi">
+          <small>In progress</small>
+          <b>3</b>
+          <span>active investigations</span>
+        </div>
+        <div class="kpi">
+          <small>Resolved in 30 days</small>
+          <b>18</b>
+          <span>department total</span>
+        </div>
+        <div class="kpi">
+          <small>Average first reply</small>
+          <b>6.2 h</b>
+          <span>within 24 h SLA target</span>
+        </div>
+      </div>
+
+      <!-- Staff 12-Column Grid -->
+      <div class="homegrid">
+        <section class="panel hg-8">
+          <div class="head">
+            <h2>Waiting for your reply</h2>
+            <a class="linkbtn" href="{% url 'department_dashboard' %}">Open inbox</a>
+          </div>
+          {% if my_private_complaints %}
+            {% for complaint in my_private_complaints|slice:":5" %}
+              <a class="item" href="{% url 'complaint_detail' complaint.id %}">
+                <div>
+                  <span class="mono muted">#CD-{{ complaint.id }}</span>
+                  {% if complaint.priority == 'URGENT' %}
+                    <span class="badge b-late">Urgent</span>
+                  {% endif %}
+                  <br>
+                  <b>{{ complaint.title }}</b><br>
+                  <span class="muted" style="font-size: 13px;">
+                    From {{ complaint.student.username }} · {{ complaint.created_at|date:"M d, H:i" }}
+                  </span>
+                </div>
+                {% if complaint.status == 'IN_PROGRESS' %}
+                  <span class="badge b-inprogress">In progress</span>
+                {% else %}
+                  <span class="badge b-submitted">Submitted</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="empty">
+              <b>All caught up</b>
+              No student is currently waiting for a reply in your department.
+            </div>
+          {% endif %}
+        </section>
+
+        <section class="panel hg-4">
+          <h2>Key dates</h2>
+          <div class="date soon">
+            <div class="d"><b>04</b><small>Nov</small></div>
+            <div><b>Add/drop closes</b><br><span class="muted" style="font-size: 13px;">In 3 days</span></div>
+          </div>
+          <div class="date">
+            <div class="d"><b>09</b><small>Nov</small></div>
+            <div><b>Installment 3 due</b><br><span class="muted" style="font-size: 13px;">In 8 days</span></div>
+          </div>
+        </section>
+
+        <section class="panel hg-8">
+          <div class="head">
+            <h2>Top issues in your department</h2>
+            <a class="linkbtn" href="{% url 'forum' %}">Open forum</a>
+          </div>
+          {% if public_complaints %}
+            {% for complaint in public_complaints|slice:":4" %}
+              <a class="item" href="{% url 'complaint_detail' complaint.id %}">
+                <div>
+                  <b>{{ complaint.title }}</b><br>
+                  <span class="muted" style="font-size: 13px;">
+                    {{ complaint.category|default:"General" }} · {{ complaint.created_at|date:"M d" }}
+                  </span>
+                </div>
+                <span class="vote" style="pointer-events: none;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 19V5M5 12l7-7 7 7"/>
+                  </svg>
+                  <b>{{ complaint.upvotes.count|default:1 }}</b>
+                </span>
+              </a>
+            {% endfor %}
+          {% endif %}
+        </section>
+
+        <section class="panel hg-4">
+          <h2>Announcements</h2>
+          <div class="ann">
+            <span class="chip">General</span>
+            <h3>Midterm schedule published</h3>
+            <p>Ensure all exam clashes are reported via the complaint portal.</p>
+            <small class="muted">Office of the Dean · 2 d ago</small>
+          </div>
+        </section>
+      </div>
+
+    {% else %}
+      <!-- ---------------- HIGHER ACCESS / ADMIN HOME ---------------- -->
+      <section class="panel welcome" style="grid-template-columns: minmax(0, 1fr);">
+        <div>
+          <h1>Welcome, {{ user.first_name|default:user.username }}</h1>
+          <p class="muted" style="margin-top: 8px;">
+            Higher Access Management · El Sewedy University of Technology (SUT)
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="{% url 'department_dashboard' %}">Open dashboard</a>
+            <a class="btn" href="{% url 'forum' %}">Review forum</a>
+            <a class="btn" href="{% url 'admin:index' %}">Database administration</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- KPI Metrics Row -->
+      <div class="kpis in">
+        <div class="kpi">
+          <small>Open complaints</small>
+          <b>{{ public_complaints|length|add:my_private_complaints|length }}</b>
+          <span>across university departments</span>
+        </div>
+        <div class="kpi">
+          <small>Average first reply</small>
+          <b>8.4 h</b>
+          <span>target 24 h</span>
+        </div>
+        <div class="kpi">
+          <small>Top issue votes</small>
+          <b>412</b>
+          <span>students behind one problem</span>
+        </div>
+        <div class="kpi">
+          <small>Issues without reply</small>
+          <b>2</b>
+          <span>over 100 votes</span>
+        </div>
+      </div>
+
+      <!-- Higher Access 12-Column Grid -->
+      <div class="homegrid">
+        <section class="panel hg-8">
+          <h2>Needs your attention</h2>
+          <div class="item">
+            <div>
+              <b>Wi-Fi access points in Building C overloaded</b><br>
+              <span class="muted" style="font-size: 13px;">287 students upvoted · IT Services response overdue</span>
+            </div>
+            <span class="badge b-late">Attention</span>
+          </div>
+          <div class="item">
+            <div>
+              <b>Registrar lines grade appeals bottleneck</b><br>
+              <span class="muted" style="font-size: 13px;">412 students upvoted · Under review</span>
+            </div>
+            <span class="badge b-review">Under review</span>
+          </div>
+        </section>
+
+        <!-- Post Announcement Form -->
+        <section class="panel hg-4 stack">
+          <h2>Campus announcement</h2>
+          <p class="muted" style="font-size: 13px;">Publish notices visible to all students on their home portal.</p>
+          <label class="f">
+            <span>Topic</span>
+            <select>
+              <option>General</option>
+              <option>Registration</option>
+              <option>Exams</option>
+              <option>Fees &amp; Finance</option>
+              <option>IT &amp; Systems</option>
+            </select>
+          </label>
+          <label class="f">
+            <span>Title</span>
+            <input type="text" placeholder="Short and specific announcement title">
+          </label>
+          <label class="f">
+            <span>Message</span>
+            <textarea placeholder="What students need to know and do..."></textarea>
+          </label>
+          <button class="btn primary" type="button" onclick="showToast('Announcement broadcasted to student portal')">
+            Publish announcement
+          </button>
+        </section>
+
+        <section class="panel hg-8">
+          <div class="head">
+            <h2>Active Complaints Queue</h2>
+            <a class="linkbtn" href="{% url 'department_dashboard' %}">View all</a>
+          </div>
+          {% if public_complaints %}
+            {% for complaint in public_complaints|slice:":5" %}
+              <a class="item" href="{% url 'complaint_detail' complaint.id %}">
+                <div>
+                  <span class="mono muted">#CD-{{ complaint.id }}</span>
+                  <b>{{ complaint.title }}</b><br>
+                  <span class="muted" style="font-size: 13px;">
+                    {{ complaint.department.name|default:"General" }} · {{ complaint.student.username }}
+                  </span>
+                </div>
+                {% if complaint.status == 'RESOLVED' %}
+                  <span class="badge b-solved">Resolved</span>
+                {% elif complaint.status == 'IN_PROGRESS' %}
+                  <span class="badge b-inprogress">In progress</span>
+                {% else %}
+                  <span class="badge b-submitted">Submitted</span>
+                {% endif %}
+              </a>
+            {% endfor %}
+          {% endif %}
+        </section>
+
+        <section class="panel hg-4">
+          <h2>Key dates</h2>
+          <div class="date soon">
+            <div class="d"><b>04</b><small>Nov</small></div>
+            <div><b>Add/drop closes</b><br><span class="muted" style="font-size: 13px;">In 3 days</span></div>
+          </div>
+          <div class="date">
+            <div class="d"><b>09</b><small>Nov</small></div>
+            <div><b>Installment 3 due</b><br><span class="muted" style="font-size: 13px;">In 8 days</span></div>
+          </div>
+        </section>
+      </div>
+
+    {% endif %}
+
+  </div>
+{% endif %}
 {% endblock %}

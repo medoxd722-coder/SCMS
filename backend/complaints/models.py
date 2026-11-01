@@ -61,6 +61,11 @@ class Complaint(models.Model):
         default=False,
         help_text="True if saved to the searchable Solved Database",
     )
+    resolved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when complaint was marked resolved",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -71,6 +76,14 @@ class Complaint(models.Model):
 
     def __str__(self):
         return f"#{self.pk or 'New'} - {self.title} [{self.get_status_display()}]"
+
+    def save(self, *args, **kwargs):
+        from django.utils import timezone
+        if self.status == self.Status.RESOLVED and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != self.Status.RESOLVED:
+            self.resolved_at = None
+        super().save(*args, **kwargs)
 
 
 class ComplaintAttachment(models.Model):
